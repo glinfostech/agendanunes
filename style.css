@@ -783,6 +783,7 @@ body.theme-dark .search-input::placeholder {
 #form-date {
     color-scheme: light;
     color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
     background: #ffffff !important;
 }
 
