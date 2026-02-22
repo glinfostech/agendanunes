@@ -4,7 +4,7 @@
 import { db, state, setBrokers, BROKERS } from "./config.js"; // <-- setBrokers adicionado
 import { updateHeaderDate, renderMain, scrollToBusinessHours } from "./render.js";
 import { 
-    collection, query, where, onSnapshot, limit, getDocs, deleteDoc, doc 
+    collection, query, onSnapshot, limit, getDocs, deleteDoc, doc 
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 import { initAuth } from "./auth.js";
@@ -19,29 +19,7 @@ function isBrokerRole(role) {
     return role === "broker" || role === "Corretor";
 }
 
-function isBrokerProfile(profile) {
-    return !!(profile && isBrokerRole(profile.role));
-}
 
-function getProfileBrokerKeys(profile) {
-    return new Set([profile?.email, profile?.id].filter(Boolean));
-}
-
-function expandBrokerKeysWithCanonicalIds(keys, brokerList = BROKERS) {
-    const expanded = new Set(keys);
-    brokerList.forEach((broker) => {
-        if (keys.has(broker.id) || keys.has(broker.docId)) {
-            expanded.add(broker.id);
-            if (broker.docId) expanded.add(broker.docId);
-        }
-    });
-    return expanded;
-}
-
-function normalizeBrokerId(brokerId, brokerList = BROKERS) {
-    if (!brokerId) return brokerId;
-    const match = brokerList.find((b) => b.id === brokerId || b.docId === brokerId);
-    return match ? match.id : brokerId;
 }
 
 // 3. FUNÇÃO PRINCIPAL
@@ -61,7 +39,7 @@ function initApp() {
         renderUserInfo();
 
         setTimeout(() => {
-            if (state.userProfile && state.userProfile.role === 'admin') {
+            if (state.userProfile && normalizeRole(state.userProfile.role) === 'admin') {
                 initReports(); 
             }
             renderUserInfo(); 
@@ -79,15 +57,13 @@ function initApp() {
 
 // --- FUNÇÃO PARA BUSCAR CORRETORES NO BANCO DE DADOS EM TEMPO REAL ---
 function listenToBrokers() {
-    const q = query(collection(db, "users"), where("role", "in", ["broker", "Corretor", "corretor"]));
+
     
     onSnapshot(usersRef, (snapshot) => {
         let loadedBrokers = [];
         snapshot.forEach((doc) => {
             const data = doc.data();
-            const role = String(data.role || "").trim().toLowerCase();
-            const isBrokerRole = role === "broker" || role.startsWith("corretor");
-            if (!isBrokerRole) return;
+
 
             loadedBrokers.push({
                 id: data.email || doc.id,
@@ -104,13 +80,7 @@ function listenToBrokers() {
             if(selectEl) selectEl.style.display = "none";
         }
 
-        loadedBrokers.sort((a, b) => a.name.localeCompare(b.name));
-        setBrokers(loadedBrokers);
 
-        // Resolve conflitos entre ids antigos (docId) e novos (email) sem quebrar renderização
-        state.appointments = state.appointments
-            .map((a) => ({ ...a, brokerId: normalizeBrokerId(a.brokerId, loadedBrokers) }))
-            .filter((a) => !a.deletedAt);
 
         if (loadedBrokers.length > 0) {
             const hasSelectedBroker = loadedBrokers.some((b) => b.id === state.selectedBrokerId);
@@ -191,7 +161,7 @@ export function setupRealtime(centerDate) {
         appts = appts.map((a) => ({ ...a, brokerId: normalizeBrokerId(a.brokerId) }));
 
         // --- NOVA REGRA: SE FOR CORRETOR, BAIXA SÓ OS DELE ---
-main
+
         }
 
         state.appointments = appts.filter((a) => !a.deletedAt);
