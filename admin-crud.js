@@ -10,6 +10,15 @@ const HIDDEN_EMAILS = [
     "gl.infostech@gmail.com"
 ];
 
+const ALLOWED_MANAGED_ROLES = new Set(["broker", "consultant"]);
+
+function normalizeRole(role) {
+    const normalized = String(role || "").trim().toLowerCase();
+    if (normalized === "corretor") return "broker";
+    if (normalized === "consultora") return "consultant";
+    return normalized;
+}
+
 export function initAdminPanel() {
     setupRealtimeUsers();
     setupForm();
@@ -22,6 +31,13 @@ export function initAdminPanel() {
         btnLogout.onclick = () => {
             if (unsubscribeUsers) unsubscribeUsers();
             if(window.logout) window.logout();
+        };
+    }
+
+    const btnBack = document.getElementById("btn-admin-back");
+    if (btnBack) {
+        btnBack.onclick = () => {
+            if (window.closeAdminPanel) window.closeAdminPanel();
         };
     }
 }
@@ -57,7 +73,9 @@ function setupRealtimeUsers() {
         
         snapshot.forEach(doc => {
             const userData = doc.data();
-            if (!HIDDEN_EMAILS.includes(userData.email)) users.push(userData);
+            const role = normalizeRole(userData.role);
+            if (!ALLOWED_MANAGED_ROLES.has(role)) return;
+            if (!HIDDEN_EMAILS.includes(userData.email)) users.push({ ...userData, role });
         });
 
         users.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
@@ -92,10 +110,8 @@ function setupRealtimeUsers() {
                 <td>
                     <span class="view-mode badge ${badgeClass}">${roleLabel}</span>
                     <select class="edit-mode edit-role form-control" style="display: none; width: 100%;">
-                        <option value="broker" ${u.role === 'broker' || u.role === 'Corretor' ? 'selected' : ''}>Corretor</option>
+                        <option value="broker" ${u.role === 'broker' ? 'selected' : ''}>Corretor</option>
                         <option value="consultant" ${u.role === 'consultant' ? 'selected' : ''}>Consultora</option>
-                        <option value="admin" ${u.role === 'admin' || u.role === 'Admin' ? 'selected' : ''}>Administrador</option>
-                        <option value="master" ${u.role === 'master' ? 'selected' : ''}>Master (TI)</option>
                     </select>
                 </td>
                 <td style="text-align: center;">
@@ -167,7 +183,7 @@ function setupForm() {
         const email = document.getElementById("crud-email").value.trim();
         const password = document.getElementById("crud-password").value.trim();
         const name = document.getElementById("crud-name").value.trim();
-        const role = document.getElementById("crud-role").value;
+        const role = normalizeRole(document.getElementById("crud-role").value);
         const phoneInput = document.getElementById("crud-phone");
         const phone = phoneInput ? phoneInput.value.trim() : "";
 
@@ -240,6 +256,11 @@ function setupInputMasks() {
 function validateRules(email, password, name, role, phone) {
     if (!role || role === "") {
         showToast("Por favor, selecione uma Função para o utilizador.", "error");
+        return false;
+    }
+
+    if (!ALLOWED_MANAGED_ROLES.has(role)) {
+        showToast("Nesta tela, só é permitido cadastrar Corretor ou Consultora.", "error");
         return false;
     }
 
