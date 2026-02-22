@@ -57,9 +57,9 @@ function injectReportModal() {
                     </div>
 
                     <div class="filter-group">
-                        <label>Consultora</label>
+                        <label>Consultor</label>
                         <select id="rep-consultant" class="form-control">
-                            <option value="">Todas</option>
+                            <option value="">Todos</option>
                         </select>
                     </div>
 
@@ -115,7 +115,7 @@ function populateConsultants() {
     if (!select) return;
 
     const currentVal = select.value;
-    select.innerHTML = '<option value="">Todas</option>';
+    select.innerHTML = '<option value="">Todos</option>';
 
     if (state.availableConsultants && state.availableConsultants.length > 0) {
         state.availableConsultants.forEach((c) => {
@@ -133,6 +133,8 @@ async function generateReport() {
     const endDate = document.getElementById("rep-end-date").value;
     const brokerId = document.getElementById("rep-broker").value;
     const consultantName = document.getElementById("rep-consultant").value;
+    const consultantObj = state.availableConsultants.find((c) => c.name === consultantName);
+    const consultantEmail = consultantObj ? consultantObj.email : "";
 
     if (!startDate || !endDate) {
         alert("Selecione data inicial e final");
@@ -152,7 +154,13 @@ async function generateReport() {
                 if (!item.date) return false;
                 if (item.date < startDate || item.date > endDate) return false;
                 if (brokerId && item.brokerId !== brokerId) return false;
-                if (consultantName && item.createdByName !== consultantName) return false;
+                if (consultantName) {
+                    const sharedList = Array.isArray(item.sharedWith) ? item.sharedWith : [];
+                    const isOwnerByName = item.createdByName === consultantName;
+                    const isOwnerByEmail = consultantEmail && item.createdBy === consultantEmail;
+                    const isShared = consultantEmail && sharedList.includes(consultantEmail);
+                    if (!isOwnerByName && !isOwnerByEmail && !isShared) return false;
+                }
                 return true;
             });
 

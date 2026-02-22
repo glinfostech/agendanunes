@@ -16,6 +16,15 @@ const DYNAMIC_THEMES = [
     { bg: "#eef2ff", border: "#4f46e5" }
 ];
 
+function getSafeBrokerIdForCreation() {
+  if (state.selectedBrokerId && state.selectedBrokerId !== "all") return state.selectedBrokerId;
+  return BROKERS.length > 0 ? BROKERS[0].id : "";
+}
+
+function getBrokerNameById(brokerId) {
+  return BROKERS.find((b) => b.id === brokerId)?.name || "Sem corretor";
+}
+
 function getBrokerTheme(brokerId) {
     if (!brokerId) return { bg: "#f8fafc", border: "#94a3b8" };
     const idx = BROKERS.findIndex(b => b.id === brokerId);
@@ -192,7 +201,7 @@ function renderWeekView(grid) {
                 if(window.showToast) window.showToast("Corretores só podem visualizar agendamentos.", "error");
             };
         } else {
-            slot.onclick = () => window.openModal(null, { brokerId: state.selectedBrokerId, time, date: dIso });
+            slot.onclick = () => window.openModal(null, { brokerId: getSafeBrokerIdForCreation(), time, date: dIso });
         }
 
         grid.appendChild(slot);
@@ -201,7 +210,7 @@ function renderWeekView(grid) {
     });
   }
 
-  const weekAppts = state.appointments.filter((a) => a.brokerId === state.selectedBrokerId && weekDays.includes(a.date));
+  const weekAppts = state.appointments.filter((a) => (state.selectedBrokerId === "all" || a.brokerId === state.selectedBrokerId) && weekDays.includes(a.date));
   
   weekAppts.forEach((appt) => {
       const dayIdx = weekDays.indexOf(appt.date);
@@ -254,7 +263,7 @@ function renderMonthView(grid) {
     cell.className = "month-cell";
     cell.innerHTML = `<div class="month-cell-header">${d}</div>`;
     
-    const dayAppts = state.appointments.filter((a) => a.date === iso && a.brokerId === state.selectedBrokerId);
+    const dayAppts = state.appointments.filter((a) => a.date === iso && (state.selectedBrokerId === "all" || a.brokerId === state.selectedBrokerId));
     dayAppts.sort((a, b) => a.startTime.localeCompare(b.startTime));
     
     dayAppts.forEach((a) => {
@@ -266,7 +275,8 @@ function renderMonthView(grid) {
       dot.style.cssText = `font-size:10px; padding:2px; background:${bgColor}; margin-bottom:2px; border-radius:3px; overflow:hidden; white-space:nowrap; cursor:pointer; color:#0f172a; border-left: 3px solid ${borderColor}; border-top:1px solid rgba(0,0,0,0.05); border-right:1px solid rgba(0,0,0,0.05); border-bottom:1px solid rgba(0,0,0,0.05);`;
       
       const firstProperty = getPropertyList(a)[0] || { reference: "" };
-      const labelText = a.isEvent ? `(AVISO) ${a.eventComment}` : `${a.startTime} ${firstProperty.reference || ""} ${getClientList(a)[0]?.name || ""}`;
+      const brokerLabel = getBrokerNameById(a.brokerId);
+      const labelText = a.isEvent ? `(AVISO) ${a.eventComment}` : `${a.startTime} [${brokerLabel}] ${firstProperty.reference || ""} ${getClientList(a)[0]?.name || ""}`;
       dot.innerText = labelText;
       
       dot.onclick = (e) => { e.stopPropagation(); window.openModal(a); };
@@ -361,6 +371,7 @@ function placeCard(grid, appt, col, rowStart, span, styleConfig = {}) {
       
       let html = "";
       html += `<div style="${textStyle}"><strong>Cons:</strong> ${iconHtml}${appt.createdByName}</div>`;
+      html += `<div style="${textStyle}"><strong>Cor:</strong> ${getBrokerNameById(appt.brokerId)}</div>`;
       
       const propertyList = getPropertyList(appt);
       const firstProperty = propertyList[0] || { reference: appt.reference || "", propertyAddress: appt.propertyAddress || "" };

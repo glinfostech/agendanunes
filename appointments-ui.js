@@ -420,14 +420,14 @@ function enforceClientRowPermissions(isLocked, isCoreEditor, isEvtMode) {
         if(nameInp) nameInp.disabled = !canEditThisRow;
         if(phoneInp) phoneInp.disabled = !canEditThisRow;
 
+        const btnWrap = row.querySelector(".remove-client-btn-container");
         const btnDel = row.querySelector(".remove-client-btn");
-        if(btnDel) {
-            if (!canEditThisRow) {
-                btnDel.style.display = "none";
-            } else {
-                btnDel.style.display = (rows.length > 1) ? "flex" : "none";
-            }
+        if (btnDel) {
+            const showRemove = canEditThisRow && rows.length > 1;
+            btnDel.style.display = showRemove ? "flex" : "none";
+            if (btnWrap) btnWrap.style.display = showRemove ? "flex" : "none";
         }
+
     });
 }
 
