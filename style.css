@@ -61,12 +61,12 @@ textarea.form-control { resize: vertical; min-height: 80px; font-family: inherit
 /* ==========================================================================
    4. NAVBAR E NAVEGAÇÃO
    ========================================================================== */
-.navbar { background: white; border-bottom: 1px solid var(--border); padding: 0.75rem 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; z-index: 500; box-shadow: var(--shadow); }
-.brand-section { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--primary); font-size: 1.2rem; }
+.navbar { background: white; border-bottom: 1px solid var(--border); padding: 0.75rem 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 12px 16px; flex-wrap: wrap; z-index: 500; box-shadow: var(--shadow); }
+.brand-section { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--primary); font-size: 1.2rem; flex: 1 1 240px; min-width: 220px; }
 
-.controls-section { display: flex; align-items: center; gap: 15px; }
+.controls-section { display: flex; align-items: center; gap: 10px; flex: 1 1 420px; justify-content: flex-end; flex-wrap: wrap; min-width: 260px; }
 
-.date-nav { display: flex; align-items: center; gap: 0.5rem; background: #f1f5f9; padding: 4px; border-radius: 8px; }
+.date-nav { display: flex; align-items: center; gap: 0.5rem; background: #f1f5f9; padding: 4px; border-radius: 8px; flex: 1 1 240px; min-width: 220px; justify-content: space-between; }
 .nav-btn { background: white; border: 1px solid var(--border); border-radius: 6px; width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
 #current-date-label { min-width: 200px; text-align: center; font-size: 0.9rem; font-weight: 600; text-transform: capitalize; }
 #date-static-display { font-family: system-ui, -apple-system, sans-serif; }
@@ -83,7 +83,7 @@ textarea.form-control { resize: vertical; min-height: 80px; font-family: inherit
 /* ==========================================================================
    5. BUSCA (SEARCH)
    ========================================================================== */
-.search-container { position: relative; max-width: 350px; width: 100%; }
+.search-container { position: relative; max-width: 420px; width: 100%; flex: 1 1 320px; min-width: 240px; }
 .search-input { width: 100%; padding: 8px 10px 8px 35px; border-radius: 20px; border: 1px solid var(--border); font-size: 0.9rem; background: #f1f5f9; transition: all 0.2s; }
 .search-input:focus { background: white; border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1); }
 .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.9rem; pointer-events: none; }
@@ -206,6 +206,26 @@ body.theme-dark .grid-slot:hover {
 .week-day-check { display: flex; align-items: center; gap: 4px; font-size: 0.8rem; background: #fff; border: 1px solid #fed7aa; padding: 4px 8px; border-radius: 4px; color: #9a3412; cursor: pointer; }
 
 .modal-footer { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--border); }
+
+
+.modal-footer .btn-secondary,
+.modal-footer .btn-secondary i {
+    color: #0f172a !important;
+}
+
+
+#btn-add-client,
+#btn-add-client i,
+#btn-add-property,
+#btn-add-property i {
+    color: #0f172a !important;
+}
+
+#btn-add-client,
+#btn-add-property {
+    background-color: #d3d3d3 !important;
+}
+
 .footer-left { display: flex; flex-wrap: wrap; gap: 8px; }
 #audit-log-container { margin-top:20px; padding:15px; background: #fef2f2; border: 1px solid #fecaca; color: #7f1d1d; border-radius:8px; max-height:200px; overflow-y:auto; font-size:0.75rem; }
 #lock-warning { background: #fff7ed; color: #c2410c; border: 1px solid #ffedd5; padding: 10px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 10px; text-align: center; display: none; }
@@ -513,6 +533,18 @@ body.theme-dark .owner-select-styled {
     border-color: var(--border) !important;
 }
 
+/* Cadastro (admin): opções não selecionadas do select devem permanecer legíveis no dark */
+body.theme-dark #crud-role option {
+    background: var(--bg-elevated);
+    color: #ffffff;
+}
+
+body.theme-dark #crud-role option:checked,
+body.theme-dark #crud-role option:hover {
+    background: #e5e7eb;
+    color: #0f172a;
+}
+
 body.theme-dark .report-modal {
     background-color: var(--report-overlay);
 }
@@ -600,13 +632,19 @@ body.theme-dark .form-group label {
     border-color: var(--border) !important;
 }
 
+
+@media (max-width: 1400px) {
+    .search-container { order: 4; max-width: 100%; flex: 1 1 100%; }
+    .controls-section { justify-content: flex-start; }
+}
+
 @media (max-width: 1024px) {
     body { overflow: auto; }
     .navbar { padding: 10px; gap: 10px; align-items: stretch; }
-    .brand-section { width: 100%; }
-    .search-container { max-width: 100%; order: 3; width: 100%; }
-    .date-nav { width: 100%; justify-content: space-between; }
-    .controls-section { width: 100%; justify-content: flex-start; flex-wrap: wrap; gap: 8px; }
+    .brand-section { width: 100%; min-width: 0; }
+    .search-container { max-width: 100%; order: 2; width: 100%; flex-basis: 100%; min-width: 0; }
+    .date-nav { width: 100%; justify-content: space-between; order: 3; }
+    .controls-section { width: 100%; justify-content: flex-start; flex-wrap: wrap; gap: 8px; order: 4; min-width: 0; }
     #current-date-label { min-width: auto; font-size: 0.85rem; }
     .main-content { overflow: auto; }
     .calendar-container { min-width: max-content; }
@@ -750,4 +788,59 @@ body.broker-view-only #form-visit select,
 body.broker-view-only #form-visit textarea {
     background-color: #f8fafc !important; 
     border: 1px dashed #cbd5e1 !important;
+}
+
+
+/* Contraste por fundo: componentes claros usam texto escuro */
+.search-input {
+    color: #0f172a !important;
+}
+
+.search-input::placeholder {
+    color: #64748b !important;
+    opacity: 1;
+}
+
+/* Navbar: botões de fundo claro precisam de texto/ícone escuros */
+.navbar .btn-secondary,
+.navbar .btn-secondary i,
+.navbar #btn-admin-panel,
+.navbar #btn-admin-panel i,
+.navbar .theme-toggle-btn,
+.navbar .theme-toggle-btn i {
+    color: #0f172a !important;
+}
+
+/* Mantém boa leitura em campos claros dentro do tema escuro */
+body.theme-dark .search-input,
+body.theme-dark .search-input::placeholder {
+    color: #0f172a !important;
+}
+
+/* Campo Data do modal: fundo claro, texto/ícone escuros e calendário nativo claro */
+.visit-datetime-grid input[type="date"],
+#form-date {
+    color-scheme: light;
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+    background: #ffffff !important;
+}
+
+#form-date::-webkit-datetime-edit,
+#form-date::-webkit-datetime-edit-fields-wrapper,
+#form-date::-webkit-datetime-edit-text,
+#form-date::-webkit-datetime-edit-month-field,
+#form-date::-webkit-datetime-edit-day-field,
+#form-date::-webkit-datetime-edit-year-field {
+    color: #0f172a !important;
+}
+
+#form-date::-webkit-date-and-time-value {
+    color: #0f172a !important;
+    opacity: 1;
+}
+
+#form-date::-webkit-calendar-picker-indicator {
+    opacity: 1;
+    filter: none;
 }

@@ -3,21 +3,25 @@ import { getClientList, getPropertyList } from "./utils.js";
 import { renderMain, updateHeaderDate, scrollToBusinessHours } from "./render.js";
 
 export function setupUIInteractions() {
+    document.body.classList.remove("theme-dark");
     setupDropdowns();
     setupSearch();
     setupEventCheckboxLogic();
     setupClientAddButton();
     setupGlobalViewFunctions();
-    setupThemeToggle();
 }
 
 function setupDropdowns() {
-    const opts = BROKERS.map((b) => `<option value="${b.id}">${b.name}</option>`).join("");
+    const formOpts = BROKERS.map((b) => `<option value="${b.id}">${b.name}</option>`).join("");
+    const viewOpts = `<option value="all">Todos os corretores</option>${formOpts}`;
     const brokerSelectView = document.getElementById("view-broker-select");
     const brokerSelectForm = document.getElementById("form-broker");
     
-    if(brokerSelectView) brokerSelectView.innerHTML = opts;
-    if(brokerSelectForm) brokerSelectForm.innerHTML = opts;
+    if(brokerSelectView) {
+        brokerSelectView.innerHTML = viewOpts;
+        if (!brokerSelectView.value) brokerSelectView.value = "all";
+    }
+    if(brokerSelectForm) brokerSelectForm.innerHTML = formOpts;
 
     let times = "";
     for (let h = TIME_START; h < TIME_END; h++) {
@@ -226,6 +230,17 @@ function setupGlobalViewFunctions() {
 }
 
 // --- FUNÇÃO AJUSTADA PARA FLEXBOX E DADOS DE CADASTRO ---
+function refreshClientRemoveButtons() {
+    const container = document.getElementById("clients-container");
+    if (!container) return;
+    const rows = Array.from(container.querySelectorAll(".client-item-row"));
+    rows.forEach((r) => {
+        const btnWrap = r.querySelector(".remove-client-btn-container");
+        if (!btnWrap) return;
+        btnWrap.style.display = rows.length > 1 ? "flex" : "none";
+    });
+}
+
 export function addClientRow(nameVal, phoneVal, addedByVal, index, rowEditable, addedByNameVal = "", addedAtVal = "") {
     const container = document.getElementById("clients-container");
     const row = document.createElement("div");
@@ -315,6 +330,7 @@ export function addClientRow(nameVal, phoneVal, addedByVal, index, rowEditable, 
     // BOTÃO REMOVER
     if (rowEditable) {
         const btnContainer = document.createElement("div");
+        btnContainer.className = "remove-client-btn-container";
         // Ajuste para alinhar verticalmente com os inputs (compensando o label)
         btnContainer.style.display = "flex";
         btnContainer.style.alignItems = "center";
@@ -331,11 +347,15 @@ export function addClientRow(nameVal, phoneVal, addedByVal, index, rowEditable, 
         btnRem.style.cursor = "pointer";
         btnRem.style.fontSize = "1rem";
 
-        btnRem.onclick = () => { row.remove(); };
+        btnRem.onclick = () => {
+            row.remove();
+            refreshClientRemoveButtons();
+        };
         btnContainer.appendChild(btnRem);
         row.appendChild(btnContainer);
     }
     container.appendChild(row);
+    refreshClientRemoveButtons();
 }
 export function addPropertyRow(referenceVal = "", addressVal = "", index = 0, rowEditable = true) {
     const container = document.getElementById("properties-container");
@@ -446,33 +466,4 @@ export function addPropertyRow(referenceVal = "", addressVal = "", index = 0, ro
             rBtnContainer.style.display = allRows.length === 1 ? "none" : "flex";
         }
     });
-}
-
-function setupThemeToggle() {
-    const btn = document.getElementById("btn-theme-toggle");
-    if (!btn) return;
-
-    const savedTheme = localStorage.getItem("agenda-theme") || "light";
-    applyTheme(savedTheme);
-
-    btn.onclick = () => {
-        const current = document.body.classList.contains("theme-dark") ? "dark" : "light";
-        const nextTheme = current === "dark" ? "light" : "dark";
-        applyTheme(nextTheme);
-    };
-}
-
-function applyTheme(theme) {
-    const btn = document.getElementById("btn-theme-toggle");
-    const isDark = theme === "dark";
-    document.body.classList.toggle("theme-dark", isDark);
-    localStorage.setItem("agenda-theme", isDark ? "dark" : "light");
-
-    if (btn) {
-        btn.innerHTML = isDark
-            ? '<i class="fas fa-sun"></i>'
-            : '<i class="fas fa-moon"></i>';
-        btn.title = isDark ? 'Ativar tema claro' : 'Ativar tema escuro';
-        btn.setAttribute('aria-label', btn.title);
-    }
 }
