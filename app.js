@@ -27,6 +27,17 @@ function getProfileBrokerKeys(profile) {
     return new Set([profile?.email, profile?.id].filter(Boolean));
 }
 
+function expandBrokerKeysWithCanonicalIds(keys, brokerList = BROKERS) {
+    const expanded = new Set(keys);
+    brokerList.forEach((broker) => {
+        if (keys.has(broker.id) || keys.has(broker.docId)) {
+            expanded.add(broker.id);
+            if (broker.docId) expanded.add(broker.docId);
+        }
+    });
+    return expanded;
+}
+
 function normalizeBrokerId(brokerId, brokerList = BROKERS) {
     if (!brokerId) return brokerId;
     const match = brokerList.find((b) => b.id === brokerId || b.docId === brokerId);
@@ -84,7 +95,8 @@ function listenToBrokers() {
 
         // --- NOVA REGRA: SE FOR CORRETOR, VÊ SÓ ELE MESMO ---
         if (isBrokerProfile(state.userProfile)) {
-            const brokerKeys = getProfileBrokerKeys(state.userProfile);
+            const rawBrokerKeys = getProfileBrokerKeys(state.userProfile);
+            const brokerKeys = expandBrokerKeysWithCanonicalIds(rawBrokerKeys, loadedBrokers);
             loadedBrokers = loadedBrokers.filter((b) => brokerKeys.has(b.id) || brokerKeys.has(b.docId));
 
             // Oculta a caixa de seleção de corretores no topo
@@ -180,7 +192,8 @@ export function setupRealtime(centerDate) {
 
         // --- NOVA REGRA: SE FOR CORRETOR, BAIXA SÓ OS DELE ---
         if (isBrokerProfile(state.userProfile)) {
-            const brokerKeys = getProfileBrokerKeys(state.userProfile);
+            const rawBrokerKeys = getProfileBrokerKeys(state.userProfile);
+            const brokerKeys = expandBrokerKeysWithCanonicalIds(rawBrokerKeys);
             appts = appts.filter((a) => brokerKeys.has(a.brokerId));
         }
 
