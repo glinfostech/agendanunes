@@ -4,7 +4,7 @@
 import { db, state, setBrokers } from "./config.js"; // <-- setBrokers adicionado
 import { updateHeaderDate, renderMain, scrollToBusinessHours } from "./render.js";
 import { 
-    collection, query, where, onSnapshot, limit, getDocs, deleteDoc, doc 
+    collection, query, onSnapshot, limit, getDocs, deleteDoc, doc 
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 import { initAuth } from "./auth.js";
@@ -17,6 +17,16 @@ initAuth(initApp);
 
 function isBrokerRole(role) {
     return role === "broker" || role === "Corretor";
+}
+
+function normalizeRole(role) {
+    if (!role) return "";
+    return String(role).trim().toLowerCase();
+}
+
+function isBrokerUserRole(role) {
+    const normalizedRole = normalizeRole(role);
+    return normalizedRole === "broker" || normalizedRole === "corretor";
 }
 
 // 3. FUNÇÃO PRINCIPAL
@@ -54,12 +64,15 @@ function initApp() {
 
 // --- FUNÇÃO PARA BUSCAR CORRETORES NO BANCO DE DADOS EM TEMPO REAL ---
 function listenToBrokers() {
-    const q = query(collection(db, "users"), where("role", "in", ["broker", "Corretor"]));
+    // Busca todos os usuários e filtra no cliente para tolerar inconsistências de capitalização/valor do campo role
+    const q = query(collection(db, "users"));
     
     onSnapshot(q, (snapshot) => {
         let loadedBrokers = [];
         snapshot.forEach((doc) => {
             const data = doc.data();
+            if (!isBrokerUserRole(data.role)) return;
+
             loadedBrokers.push({
                 id: data.email || doc.id,
                 docId: doc.id,
