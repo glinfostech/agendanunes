@@ -20,7 +20,7 @@ function initApp() {
     listenToBrokers(); 
 
     // --- NOVA REGRA: TRAVAR TELA PARA CORRETOR ---
-    if (state.userProfile && isBrokerRole(state.userProfile.role)) {
+    if (state.userProfile && (state.userProfile.role === "broker" || state.userProfile.role === "Corretor")) {
         document.body.classList.add("broker-view-only");
     }
 
@@ -50,7 +50,7 @@ function initApp() {
 
 // --- FUNÇÃO PARA BUSCAR CORRETORES NO BANCO DE DADOS EM TEMPO REAL ---
 function listenToBrokers() {
-    const q = query(collection(db, "users"), where("role", "in", ["broker", "Corretor", "corretor"]));
+    const q = query(collection(db, "users"), where("role", "in", ["broker", "Corretor"]));
     
     onSnapshot(usersRef, (snapshot) => {
         let loadedBrokers = [];
@@ -68,7 +68,7 @@ function listenToBrokers() {
         });
 
         // --- NOVA REGRA: SE FOR CORRETOR, VÊ SÓ ELE MESMO ---
-        if (state.userProfile && isBrokerRole(state.userProfile.role)) {
+        if (state.userProfile && (state.userProfile.role === "broker" || state.userProfile.role === "Corretor")) {
             loadedBrokers = loadedBrokers.filter(b => b.id === state.userProfile.email);
             
             // Oculta a caixa de seleção de corretores no topo
@@ -143,7 +143,7 @@ export function setupRealtime(centerDate) {
         });
         
         // --- NOVA REGRA: SE FOR CORRETOR, BAIXA SÓ OS DELE ---
-        if (state.userProfile && isBrokerRole(state.userProfile.role)) {
+        if (state.userProfile && (state.userProfile.role === "broker" || state.userProfile.role === "Corretor")) {
             appts = appts.filter(a => a.brokerId === state.userProfile.email);
         }
 
@@ -152,10 +152,6 @@ export function setupRealtime(centerDate) {
     }, (error) => {
         console.error("Erro no listener realtime:", error);
     });
-}
-
-function isBrokerRole(role) {
-    return ["broker", "Corretor", "corretor"].includes(role);
 }
 async function cleanupExpiredDeletedAppointments() {
     const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
