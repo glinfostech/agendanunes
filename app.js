@@ -50,12 +50,16 @@ function initApp() {
 
 // --- FUNÇÃO PARA BUSCAR CORRETORES NO BANCO DE DADOS EM TEMPO REAL ---
 function listenToBrokers() {
-    const q = query(collection(db, "users"), where("role", "in", ["broker", "Corretor"]));
+    const usersRef = collection(db, "users");
     
-    onSnapshot(q, (snapshot) => {
+    onSnapshot(usersRef, (snapshot) => {
         let loadedBrokers = [];
         snapshot.forEach((doc) => {
             const data = doc.data();
+            const role = String(data.role || "").trim().toLowerCase();
+            const isBrokerRole = role === "broker" || role.startsWith("corretor");
+            if (!isBrokerRole) return;
+
             loadedBrokers.push({
                 id: doc.id, 
                 name: data.name,
