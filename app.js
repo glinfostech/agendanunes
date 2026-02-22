@@ -15,12 +15,16 @@ import { initReports } from "./reports.js";
 // 2. INICIALIZAÇÃO E AUTENTICAÇÃO
 initAuth(initApp);
 
+function isBrokerRole(role) {
+    return role === "broker" || role === "Corretor";
+}
+
 // 3. FUNÇÃO PRINCIPAL
 function initApp() {
     listenToBrokers(); 
 
     // --- NOVA REGRA: TRAVAR TELA PARA CORRETOR ---
-    if (state.userProfile && (state.userProfile.role === "broker" || state.userProfile.role === "Corretor")) {
+    if (state.userProfile && isBrokerRole(state.userProfile.role)) {
         document.body.classList.add("broker-view-only");
     }
 
@@ -57,23 +61,39 @@ function listenToBrokers() {
         snapshot.forEach((doc) => {
             const data = doc.data();
             loadedBrokers.push({
-                id: doc.id, 
+                id: data.email || doc.id,
+                docId: doc.id,
                 name: data.name,
                 phone: data.phone || "" 
             });
         });
 
         // --- NOVA REGRA: SE FOR CORRETOR, VÊ SÓ ELE MESMO ---
-        if (state.userProfile && (state.userProfile.role === "broker" || state.userProfile.role === "Corretor")) {
-            loadedBrokers = loadedBrokers.filter(b => b.id === state.userProfile.email);
+        if (state.userProfile && isBrokerRole(state.userProfile.role)) {
+            loadedBrokers = loadedBrokers.filter((b) => (
+                b.id === state.userProfile.email || b.docId === state.userProfile.id
+            ));
             
             // Oculta a caixa de seleção de corretores no topo
             const selectEl = document.getElementById("view-broker-select");
             if(selectEl) selectEl.style.display = "none";
         }
 
-        loadedBrokers.sort((a, b) => a.name.localeCompare(b.name));
+        loadedBrokers.sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
         setBrokers(loadedBrokers); 
+
+        if (loadedBrokers.length > 0) {
+            const hasSelectedBroker = loadedBrokers.some((b) => b.id === state.selectedBrokerId);
+            if (!hasSelectedBroker) {
+                state.selectedBrokerId = loadedBrokers[0].id;
+            }
+
+            const selectEl = document.getElementById("view-broker-select");
+            if (selectEl) selectEl.value = state.selectedBrokerId;
+        } else {
+            state.selectedBrokerId = "all";
+        }
+
         renderMain(); 
         
         if (typeof window.populateBrokerSelect === "function") window.populateBrokerSelect();
@@ -139,8 +159,9 @@ export function setupRealtime(centerDate) {
         });
         
         // --- NOVA REGRA: SE FOR CORRETOR, BAIXA SÓ OS DELE ---
-        if (state.userProfile && (state.userProfile.role === "broker" || state.userProfile.role === "Corretor")) {
-            appts = appts.filter(a => a.brokerId === state.userProfile.email);
+        if (state.userProfile && isBrokerRole(state.userProfile.role)) {
+            const keys = new Set([state.userProfile.email, state.userProfile.id].filter(Boolean));
+            appts = appts.filter((a) => keys.has(a.brokerId));
         }
 
         state.appointments = appts.filter((a) => !a.deletedAt);
