@@ -4,7 +4,7 @@
 import { db, state, setBrokers } from "./config.js"; // <-- setBrokers adicionado
 import { updateHeaderDate, renderMain, scrollToBusinessHours } from "./render.js";
 import { 
-    collection, query, onSnapshot, limit, getDocs, deleteDoc, doc 
+    collection, query, onSnapshot, where, limit, getDocs, deleteDoc, doc 
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 import { initAuth } from "./auth.js";

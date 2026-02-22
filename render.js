@@ -354,6 +354,10 @@ function placeCard(grid, appt, col, rowStart, span, styleConfig = {}) {
       contentDiv.style.overflow = "hidden";
       
       let iconHtml = showSharedIcon ? `<i class="fas fa-users shared-icon" title="Compartilhado"></i> ` : "";
+      const showEditedIcon = appt.isEdited || (!!appt.editedAt) || (appt.updatedAt && appt.createdAt && appt.updatedAt !== appt.createdAt);
+      if (showEditedIcon) {
+          iconHtml += `<i class="fas fa-pen-to-square" title="Agendamento editado" style="color:#475569;"></i> `;
+      }
       
       let html = "";
       html += `<div style="${textStyle}"><strong>Cons:</strong> ${iconHtml}${appt.createdByName}</div>`;

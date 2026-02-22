@@ -88,20 +88,35 @@ export async function handleBrokerNotification(brokerId, brokerName, actionType,
     try {
         if (!appointmentData || appointmentData.isEvent) return;
         if (!brokerId) return;
+        if (actionType !== "create" && actionType !== "update") return;
 
-        if (actionType === "create") {
-            console.log(`Notificação create preparada para ${brokerName || brokerId}`);
+        const broker = state.brokers.find((b) => b.id === brokerId || b.docId === brokerId);
+        const resolvedBrokerName = brokerName || broker?.name || "Corretor";
+        const brokerPhone = broker?.phone || getBrokerPhoneByName(resolvedBrokerName);
+
+        if (!brokerPhone) {
+            await showDialog("Aviso", `Agendamento salvo, mas o corretor ${resolvedBrokerName} não possui telefone cadastrado.`);
             return;
         }
 
-        if (actionType === "update") {
-            console.log(`Notificação update preparada para ${brokerName || brokerId}`);
-            return;
-        }
+        const clients = Array.isArray(appointmentData.clients) ? appointmentData.clients : [];
+        const firstClient = clients.find((c) => String(c?.name || "").trim()) || { name: "Cliente" };
+        const isUpdate = actionType === "update";
 
-        if (actionType === "delete") {
-            console.log(`Notificação delete preparada para ${brokerName || brokerId}`);
-        }
+        const shouldSend = await showDialog(
+            "Notificação WhatsApp",
+            isUpdate
+                ? `Agendamento editado com sucesso. Deseja enviar atualização para ${resolvedBrokerName}?`
+                : `Agendamento criado com sucesso. Deseja enviar no WhatsApp para ${resolvedBrokerName}?`,
+            [
+                { text: "Agora não", value: false, class: "btn-cancel" },
+                { text: "Enviar", value: true, class: "btn-confirm" }
+            ]
+        );
+
+        if (!shouldSend) return;
+
+        await sendWhatsapp(firstClient.name, brokerPhone, appointmentData, resolvedBrokerName, isUpdate);
     } catch (e) {
         console.error("Erro na notificação (ignorado para não travar):", e);
     }

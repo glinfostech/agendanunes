@@ -10,6 +10,7 @@ import {
     saveAppointmentAction, 
     deleteAppointmentAction 
 } from "./appointments-actions.js";
+import { handleBrokerNotification } from "./appointments-core.js";
 
 export function setupAppointmentLogic() {
     // Liga a função global window.openModal à UI, injetando a lógica de Deletar
@@ -52,7 +53,16 @@ function setupFormSubmit() {
             const formData = getFormDataFromUI();
             
             // 2. Manda a Action salvar (A action valida e persiste)
-            await saveAppointmentAction(formData);
+            const saveResult = await saveAppointmentAction(formData);
+
+            if (saveResult && saveResult.appointment) {
+                await handleBrokerNotification(
+                    saveResult.appointment.brokerId,
+                    null,
+                    saveResult.actionType || (formData.id ? "update" : "create"),
+                    saveResult.appointment
+                );
+            }
 
             // 3. Sucesso: Fecha modal
             if(window.closeModal) window.closeModal();
