@@ -751,3 +751,38 @@ body.broker-view-only #form-visit textarea {
     background-color: #f8fafc !important; 
     border: 1px dashed #cbd5e1 !important;
 }
+
+
+/* Contraste por fundo: componentes claros usam texto escuro */
+.search-input {
+    color: #0f172a !important;
+}
+
+.search-input::placeholder {
+    color: #64748b !important;
+    opacity: 1;
+}
+
+.btn-secondary,
+.btn-secondary i,
+#btn-admin-panel,
+#btn-admin-panel i,
+#btn-admin-back,
+#btn-admin-back i {
+    color: #0f172a !important;
+}
+
+/* Mantém boa leitura em campos claros dentro do tema escuro */
+body.theme-dark .search-input,
+body.theme-dark .search-input::placeholder,
+body.theme-dark input[type="date"],
+body.theme-dark .visit-datetime-grid #form-date {
+    color: #0f172a !important;
+}
+
+
+/* Mantém o calendário nativo do campo de data em estilo claro no modal de agendamento */
+.visit-datetime-grid input[type="date"],
+#form-date {
+    color-scheme: light;
+}
