@@ -36,9 +36,14 @@
             <i class="fas fa-user-shield" style="color: var(--primary); font-size: 1.5rem;"></i>
             <h2>Gestão de Usuários</h2>
         </div>
-        <button id="btn-admin-logout" class="btn-logout">
-            <i class="fas fa-sign-out-alt"></i> Sair
-        </button>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <button id="btn-admin-back" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar para Agenda
+            </button>
+            <button id="btn-admin-logout" class="btn-logout">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </button>
+        </div>
     </header>
 
     <div class="admin-content">
@@ -131,6 +136,9 @@
             </div>
             <button id="btn-theme-toggle" class="btn btn-secondary btn-sm theme-toggle-btn" type="button" aria-label="Alternar tema" title="Alternar tema">
                 <i class="fas fa-moon"></i>
+            </button>
+            <button id="btn-admin-panel" class="btn btn-secondary btn-sm hidden" type="button">
+                <i class="fas fa-user-plus"></i> Cadastrar
             </button>
             <div class="user-menu">
                 <div class="user-info">

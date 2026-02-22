@@ -3,8 +3,12 @@ import { collection, query, getDocs } from "https://www.gstatic.com/firebasejs/9
 
 let currentReportData = [];
 
+function normalizeRole(role) {
+    return String(role || "").trim().toLowerCase();
+}
+
 export function initReports() {
-    if (!state.userProfile || state.userProfile.role !== "admin") return;
+    if (!state.userProfile || normalizeRole(state.userProfile.role) !== "admin") return;
     injectReportButton();
     injectReportModal();
 }

@@ -112,40 +112,49 @@ function setupLoginForm(initAppCallback) {
     });
 }
 
+
+function showMainAppView() {
+    const navBar = document.getElementById("main-navbar");
+    const appContainer = document.getElementById("app-container");
+    const adminPanel = document.getElementById("admin-crud-screen");
+
+    if (adminPanel) adminPanel.classList.add("hidden");
+    if (navBar) navBar.classList.remove("hidden");
+    if (appContainer) appContainer.classList.remove("hidden");
+}
+
+function showAdminPanelView() {
+    const navBar = document.getElementById("main-navbar");
+    const appContainer = document.getElementById("app-container");
+    const adminPanel = document.getElementById("admin-crud-screen");
+
+    if (adminPanel) adminPanel.classList.remove("hidden");
+    if (navBar) navBar.classList.add("hidden");
+    if (appContainer) appContainer.classList.add("hidden");
+}
+
 function handleLoginSuccess(profile, initAppCallback) {
     state.userProfile = profile;
     localStorage.setItem(SESSION_KEY, JSON.stringify(profile));
 
     const loginScreen = document.getElementById("login-screen");
-    const navBar = document.getElementById("main-navbar");
-    const appContainer = document.getElementById("app-container");
-    const adminPanel = document.getElementById("admin-crud-screen"); 
-
     if(loginScreen) loginScreen.classList.add("hidden");
 
-    // Lógica de Roteamento (Admin vs App)
+    showMainAppView();
+
     if (isAdminRole(profile.role)) {
-        if(adminPanel) adminPanel.classList.remove("hidden");
-        if(navBar) navBar.classList.add("hidden");
-        if(appContainer) appContainer.classList.add("hidden");
-        
         initAdminPanel();
-    } else {
-        if(adminPanel) adminPanel.classList.add("hidden");
-        
-        if(navBar) navBar.classList.remove("hidden");
-        if(appContainer) appContainer.classList.remove("hidden");
+    }
 
-        updateUserUI(profile);
-        
-        // Carrega consultoras (se tiver permissão)
-        if (["admin", "consultant"].includes(normalizeRole(profile.role))) {
-            loadConsultantsList();
-        }
+    updateUserUI(profile);
 
-        if (!state.appInitialized && initAppCallback) {
-            initAppCallback();
-        }
+    // Carrega consultoras (se tiver permissão)
+    if (["admin", "consultant"].includes(normalizeRole(profile.role))) {
+        loadConsultantsList();
+    }
+
+    if (!state.appInitialized && initAppCallback) {
+        initAppCallback();
     }
 }
 
@@ -157,7 +166,7 @@ function handleLogout() {
     const loginScreen = document.getElementById("login-screen");
     const navBar = document.getElementById("main-navbar");
     const appContainer = document.getElementById("app-container");
-    const adminPanel = document.getElementById("admin-crud-screen"); 
+    const adminPanel = document.getElementById("admin-crud-screen");
 
     if(loginScreen) loginScreen.classList.remove("hidden");
     if(navBar) navBar.classList.add("hidden");
@@ -178,8 +187,15 @@ function updateUserUI(profile) {
     
     const adminPanelBtn = document.getElementById("btn-admin-panel"); 
     if (adminPanelBtn) {
-        if (isAdminRole(profile.role)) adminPanelBtn.classList.remove('hidden');
-        else adminPanelBtn.classList.add('hidden');
+        if (isAdminRole(profile.role)) {
+            adminPanelBtn.classList.remove('hidden');
+            adminPanelBtn.onclick = () => showAdminPanelView();
+            window.openAdminPanel = showAdminPanelView;
+            window.closeAdminPanel = showMainAppView;
+        } else {
+            adminPanelBtn.classList.add('hidden');
+            adminPanelBtn.onclick = null;
+        }
     }
 }
 

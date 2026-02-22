@@ -46,7 +46,7 @@ function initApp() {
         renderUserInfo();
 
         setTimeout(() => {
-            if (state.userProfile && state.userProfile.role === 'admin') {
+            if (state.userProfile && normalizeRole(state.userProfile.role) === 'admin') {
                 initReports(); 
             }
             renderUserInfo(); 

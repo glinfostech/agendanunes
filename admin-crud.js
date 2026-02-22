@@ -33,6 +33,13 @@ export function initAdminPanel() {
             if(window.logout) window.logout();
         };
     }
+
+    const btnBack = document.getElementById("btn-admin-back");
+    if (btnBack) {
+        btnBack.onclick = () => {
+            if (window.closeAdminPanel) window.closeAdminPanel();
+        };
+    }
 }
 
 // --- CONTROLE DE EXIBIÇÃO DO TELEFONE ---
