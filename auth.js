@@ -1,7 +1,7 @@
 import { db, state } from "./config.js";
 import { initAdminPanel } from "./admin-crud.js"; 
 import { 
-    collection, query, where, getDocs 
+    collection, query, where, getDocs, doc, getDoc 
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 const SESSION_KEY = "agenda_nunes_user_session";
@@ -16,6 +16,75 @@ const HIDDEN_USERS = [
     "gl.infostech@gmail.com",
     "admin@admin.com"
 ];
+
+const AUTH_COLLECTIONS = ["usuarios", "users"];
+
+
+function normalizeEmail(email) {
+    return String(email || "").trim().toLowerCase();
+}
+
+function isSamePassword(savedPassword, typedPassword) {
+    return String(savedPassword || "").trim() === String(typedPassword || "").trim();
+}
+
+async function findUserByCredentials(rawEmailInput, password) {
+    const normalizedEmail = normalizeEmail(rawEmailInput);
+    const typedEmail = String(rawEmailInput || "").trim();
+
+    const tryDocIds = [typedEmail, normalizedEmail]
+        .filter(Boolean)
+        .filter((v, i, arr) => arr.indexOf(v) === i);
+
+    for (const collectionName of AUTH_COLLECTIONS) {
+        for (const docId of tryDocIds) {
+            try {
+                const snap = await getDoc(doc(db, collectionName, docId));
+                if (snap.exists() && isSamePassword((snap.data() || {}).password, password)) {
+                    return { userDoc: snap, userData: snap.data() || {} };
+                }
+            } catch (_) {}
+        }
+    }
+
+    const emailCandidates = [typedEmail, normalizedEmail]
+        .filter(Boolean)
+        .filter((v, i, arr) => arr.indexOf(v) === i);
+
+    for (const collectionName of AUTH_COLLECTIONS) {
+        for (const candidate of emailCandidates) {
+            try {
+                const q = query(collection(db, collectionName), where("email", "==", candidate));
+                const snap = await getDocs(q);
+                if (snap.empty) continue;
+
+                const found = snap.docs.find((d) => isSamePassword((d.data() || {}).password, password));
+                if (found) return { userDoc: found, userData: found.data() || {} };
+            } catch (_) {}
+        }
+    }
+
+    for (const collectionName of AUTH_COLLECTIONS) {
+        try {
+            const q = query(collection(db, collectionName), where("emailNormalizado", "==", normalizedEmail));
+            const snap = await getDocs(q);
+            if (snap.empty) continue;
+
+            const found = snap.docs.find((d) => isSamePassword((d.data() || {}).password, password));
+            if (found) return { userDoc: found, userData: found.data() || {} };
+        } catch (_) {}
+    }
+
+    return null;
+}
+
+function normalizeRole(role) {
+    return String(role || "").trim().toLowerCase();
+}
+
+function isAdminRole(role) {
+    return normalizeRole(role) === "admin";
+}
 
 export function initAuth(initAppCallback) {
     setupLoginForm(initAppCallback);
@@ -54,7 +123,7 @@ function setupLoginForm(initAppCallback) {
         const passInput = document.getElementById("login-password");
         const btnSubmit = newForm.querySelector("button[type='submit']");
 
-        const email = emailInput.value.trim();
+        const email = normalizeEmail(emailInput.value);
         const password = passInput.value.trim();
 
         if (!email || !password) {
@@ -66,28 +135,20 @@ function setupLoginForm(initAppCallback) {
         if(btnSubmit) btnSubmit.disabled = true;
         
         try {
-            const q = query(
-                collection(db, "users"), 
-                where("email", "==", email),
-                where("password", "==", password) 
-            );
+            const foundUser = await findUserByCredentials(emailInput.value, password);
 
-            const querySnapshot = await getDocs(q);
-
-            if (querySnapshot.empty) {
+            if (!foundUser) {
                 throw new Error("E-mail ou senha incorretos.");
             }
 
-            const userDoc = querySnapshot.docs[0];
-            const userData = userDoc.data();
-            
+            const { userDoc, userData } = foundUser;
             const profile = {
                 ...userData,
-                id: userDoc.id, 
-                email: userData.email || userDoc.id 
+                id: userDoc.id,
+                email: normalizeEmail(userData.email || userDoc.id)
             };
 
-            if (SUPER_ADMINS.includes(profile.email)) {
+            if (SUPER_ADMINS.includes(normalizeEmail(profile.email))) {
                 profile.role = "admin";
             }
 
@@ -104,40 +165,49 @@ function setupLoginForm(initAppCallback) {
     });
 }
 
+
+function showMainAppView() {
+    const navBar = document.getElementById("main-navbar");
+    const appContainer = document.getElementById("app-container");
+    const adminPanel = document.getElementById("admin-crud-screen");
+
+    if (adminPanel) adminPanel.classList.add("hidden");
+    if (navBar) navBar.classList.remove("hidden");
+    if (appContainer) appContainer.classList.remove("hidden");
+}
+
+function showAdminPanelView() {
+    const navBar = document.getElementById("main-navbar");
+    const appContainer = document.getElementById("app-container");
+    const adminPanel = document.getElementById("admin-crud-screen");
+
+    if (adminPanel) adminPanel.classList.remove("hidden");
+    if (navBar) navBar.classList.add("hidden");
+    if (appContainer) appContainer.classList.add("hidden");
+}
+
 function handleLoginSuccess(profile, initAppCallback) {
     state.userProfile = profile;
     localStorage.setItem(SESSION_KEY, JSON.stringify(profile));
 
     const loginScreen = document.getElementById("login-screen");
-    const navBar = document.getElementById("main-navbar");
-    const appContainer = document.getElementById("app-container");
-    const adminPanel = document.getElementById("admin-crud-screen"); 
-
     if(loginScreen) loginScreen.classList.add("hidden");
 
-    // Lógica de Roteamento (Admin vs App)
-    if (profile.email === "admin@admin.com") {
-        if(adminPanel) adminPanel.classList.remove("hidden");
-        if(navBar) navBar.classList.add("hidden");
-        if(appContainer) appContainer.classList.add("hidden");
-        
+    showMainAppView();
+
+    if (isAdminRole(profile.role)) {
         initAdminPanel();
-    } else {
-        if(adminPanel) adminPanel.classList.add("hidden");
-        
-        if(navBar) navBar.classList.remove("hidden");
-        if(appContainer) appContainer.classList.remove("hidden");
+    }
 
-        updateUserUI(profile);
-        
-        // Carrega consultoras (se tiver permissão)
-        if (["admin", "consultant"].includes(profile.role)) {
-            loadConsultantsList();
-        }
+    updateUserUI(profile);
 
-        if (!state.appInitialized && initAppCallback) {
-            initAppCallback();
-        }
+    // Carrega consultoras (se tiver permissão)
+    if (["admin", "consultant"].includes(normalizeRole(profile.role))) {
+        loadConsultantsList();
+    }
+
+    if (!state.appInitialized && initAppCallback) {
+        initAppCallback();
     }
 }
 
@@ -149,7 +219,7 @@ function handleLogout() {
     const loginScreen = document.getElementById("login-screen");
     const navBar = document.getElementById("main-navbar");
     const appContainer = document.getElementById("app-container");
-    const adminPanel = document.getElementById("admin-crud-screen"); 
+    const adminPanel = document.getElementById("admin-crud-screen");
 
     if(loginScreen) loginScreen.classList.remove("hidden");
     if(navBar) navBar.classList.add("hidden");
@@ -170,8 +240,15 @@ function updateUserUI(profile) {
     
     const adminPanelBtn = document.getElementById("btn-admin-panel"); 
     if (adminPanelBtn) {
-        if (profile.role === 'admin') adminPanelBtn.classList.remove('hidden');
-        else adminPanelBtn.classList.add('hidden');
+        if (isAdminRole(profile.role)) {
+            adminPanelBtn.classList.remove('hidden');
+            adminPanelBtn.onclick = () => showAdminPanelView();
+            window.openAdminPanel = showAdminPanelView;
+            window.closeAdminPanel = showMainAppView;
+        } else {
+            adminPanelBtn.classList.add('hidden');
+            adminPanelBtn.onclick = null;
+        }
     }
 }
 
@@ -182,9 +259,9 @@ async function loadConsultantsList() {
         const snapshot = await getDocs(q);
         
         state.availableConsultants = snapshot.docs
-          .map((doc) => ({ email: doc.data().email || doc.id, name: doc.data().name || "" }))
+          .map((doc) => ({ email: normalizeEmail(doc.data().email || doc.id), name: doc.data().name || "" }))
           // FILTRO: Remove quem estiver na lista HIDDEN_USERS
-          .filter(u => !HIDDEN_USERS.includes(u.email))
+          .filter(u => !HIDDEN_USERS.includes(normalizeEmail(u.email)))
           .sort((a, b) => a.name.localeCompare(b.name));
           
     } catch (e) {
