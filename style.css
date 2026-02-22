@@ -533,6 +533,18 @@ body.theme-dark .owner-select-styled {
     border-color: var(--border) !important;
 }
 
+/* Cadastro (admin): opções não selecionadas do select devem permanecer legíveis no dark */
+body.theme-dark #crud-role option {
+    background: var(--bg-elevated);
+    color: #ffffff;
+}
+
+body.theme-dark #crud-role option:checked,
+body.theme-dark #crud-role option:hover {
+    background: #e5e7eb;
+    color: #0f172a;
+}
+
 body.theme-dark .report-modal {
     background-color: var(--report-overlay);
 }
