@@ -1,7 +1,7 @@
 // app.js
 
 // 1. IMPORTAÇÕES
-import { db, state, setBrokers } from "./config.js"; // <-- setBrokers adicionado
+import { db, state, setBrokers, BROKERS } from "./config.js"; // <-- setBrokers adicionado
 import { updateHeaderDate, renderMain, scrollToBusinessHours } from "./render.js";
 import { 
     collection, query, where, onSnapshot, limit, getDocs, deleteDoc, doc 
@@ -14,6 +14,35 @@ import { initReports } from "./reports.js";
 
 // 2. INICIALIZAÇÃO E AUTENTICAÇÃO
 initAuth(initApp);
+
+function isBrokerRole(role) {
+    return role === "broker" || role === "Corretor";
+}
+
+function isBrokerProfile(profile) {
+    return !!(profile && isBrokerRole(profile.role));
+}
+
+function getProfileBrokerKeys(profile) {
+    return new Set([profile?.email, profile?.id].filter(Boolean));
+}
+
+function expandBrokerKeysWithCanonicalIds(keys, brokerList = BROKERS) {
+    const expanded = new Set(keys);
+    brokerList.forEach((broker) => {
+        if (keys.has(broker.id) || keys.has(broker.docId)) {
+            expanded.add(broker.id);
+            if (broker.docId) expanded.add(broker.docId);
+        }
+    });
+    return expanded;
+}
+
+function normalizeBrokerId(brokerId, brokerList = BROKERS) {
+    if (!brokerId) return brokerId;
+    const match = brokerList.find((b) => b.id === brokerId || b.docId === brokerId);
+    return match ? match.id : brokerId;
+}
 
 // 3. FUNÇÃO PRINCIPAL
 function initApp() {
@@ -61,23 +90,40 @@ function listenToBrokers() {
             if (!isBrokerRole) return;
 
             loadedBrokers.push({
-                id: doc.id, 
+                id: data.email || doc.id,
+                docId: doc.id,
                 name: data.name,
                 phone: data.phone || "" 
             });
         });
 
         // --- NOVA REGRA: SE FOR CORRETOR, VÊ SÓ ELE MESMO ---
-        if (state.userProfile && isBrokerRole(state.userProfile.role)) {
-            loadedBrokers = loadedBrokers.filter(b => b.id === state.userProfile.email);
-            
+
             // Oculta a caixa de seleção de corretores no topo
             const selectEl = document.getElementById("view-broker-select");
             if(selectEl) selectEl.style.display = "none";
         }
 
         loadedBrokers.sort((a, b) => a.name.localeCompare(b.name));
-        setBrokers(loadedBrokers); 
+        setBrokers(loadedBrokers);
+
+        // Resolve conflitos entre ids antigos (docId) e novos (email) sem quebrar renderização
+        state.appointments = state.appointments
+            .map((a) => ({ ...a, brokerId: normalizeBrokerId(a.brokerId, loadedBrokers) }))
+            .filter((a) => !a.deletedAt);
+
+        if (loadedBrokers.length > 0) {
+            const hasSelectedBroker = loadedBrokers.some((b) => b.id === state.selectedBrokerId);
+            if (!hasSelectedBroker) {
+                state.selectedBrokerId = loadedBrokers[0].id;
+            }
+
+            const selectEl = document.getElementById("view-broker-select");
+            if (selectEl) selectEl.value = state.selectedBrokerId;
+        } else {
+            state.selectedBrokerId = "all";
+        }
+
         renderMain(); 
         
         if (typeof window.populateBrokerSelect === "function") window.populateBrokerSelect();
@@ -142,9 +188,10 @@ export function setupRealtime(centerDate) {
             appts.push({ id: doc.id, ...doc.data() });
         });
         
+        appts = appts.map((a) => ({ ...a, brokerId: normalizeBrokerId(a.brokerId) }));
+
         // --- NOVA REGRA: SE FOR CORRETOR, BAIXA SÓ OS DELE ---
-        if (state.userProfile && isBrokerRole(state.userProfile.role)) {
-            appts = appts.filter(a => a.brokerId === state.userProfile.email);
+main
         }
 
         state.appointments = appts.filter((a) => !a.deletedAt);
