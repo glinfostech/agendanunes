@@ -57,7 +57,8 @@ function listenToBrokers() {
         snapshot.forEach((doc) => {
             const data = doc.data();
             loadedBrokers.push({
-                id: doc.id, 
+                id: data.email || doc.id,
+                docId: doc.id,
                 name: data.name,
                 phone: data.phone || "" 
             });
@@ -65,7 +66,9 @@ function listenToBrokers() {
 
         // --- NOVA REGRA: SE FOR CORRETOR, VÊ SÓ ELE MESMO ---
         if (state.userProfile && (state.userProfile.role === "broker" || state.userProfile.role === "Corretor")) {
-            loadedBrokers = loadedBrokers.filter(b => b.id === state.userProfile.email);
+            loadedBrokers = loadedBrokers.filter((b) => (
+                b.id === state.userProfile.email || b.docId === state.userProfile.id
+            ));
             
             // Oculta a caixa de seleção de corretores no topo
             const selectEl = document.getElementById("view-broker-select");
@@ -74,6 +77,19 @@ function listenToBrokers() {
 
         loadedBrokers.sort((a, b) => a.name.localeCompare(b.name));
         setBrokers(loadedBrokers); 
+
+        if (loadedBrokers.length > 0) {
+            const hasSelectedBroker = loadedBrokers.some((b) => b.id === state.selectedBrokerId);
+            if (!hasSelectedBroker) {
+                state.selectedBrokerId = loadedBrokers[0].id;
+            }
+
+            const selectEl = document.getElementById("view-broker-select");
+            if (selectEl) selectEl.value = state.selectedBrokerId;
+        } else {
+            state.selectedBrokerId = "all";
+        }
+
         renderMain(); 
         
         if (typeof window.populateBrokerSelect === "function") window.populateBrokerSelect();
