@@ -780,3 +780,9 @@ body.theme-dark .visit-datetime-grid #form-date {
     color: #0f172a !important;
 }
 
+
+/* Mantém o calendário nativo do campo de data em estilo claro no modal de agendamento */
+.visit-datetime-grid input[type="date"],
+#form-date {
+    color-scheme: light;
+}
