@@ -1,7 +1,7 @@
 // app.js
 
 // 1. IMPORTAÇÕES
-import { db, state, setBrokers } from "./config.js"; // <-- setBrokers adicionado
+import { db, state, setBrokers, BROKERS } from "./config.js"; // <-- setBrokers adicionado
 import { updateHeaderDate, renderMain, scrollToBusinessHours } from "./render.js";
 import { 
     collection, query, where, onSnapshot, limit, getDocs, deleteDoc, doc 
@@ -14,6 +14,21 @@ import { initReports } from "./reports.js";
 
 // 2. INICIALIZAÇÃO E AUTENTICAÇÃO
 initAuth(initApp);
+
+
+function isBrokerProfile(profile) {
+    return !!(profile && (profile.role === "broker" || profile.role === "Corretor"));
+}
+
+function getProfileBrokerKeys(profile) {
+    return new Set([profile?.email, profile?.id].filter(Boolean));
+}
+
+function normalizeBrokerId(brokerId, brokerList = BROKERS) {
+    if (!brokerId) return brokerId;
+    const match = brokerList.find((b) => b.id === brokerId || b.docId === brokerId);
+    return match ? match.id : brokerId;
+}
 
 // 3. FUNÇÃO PRINCIPAL
 function initApp() {
@@ -65,18 +80,22 @@ function listenToBrokers() {
         });
 
         // --- NOVA REGRA: SE FOR CORRETOR, VÊ SÓ ELE MESMO ---
-        if (state.userProfile && (state.userProfile.role === "broker" || state.userProfile.role === "Corretor")) {
-            loadedBrokers = loadedBrokers.filter((b) => (
-                b.id === state.userProfile.email || b.docId === state.userProfile.id
-            ));
-            
+        if (isBrokerProfile(state.userProfile)) {
+            const brokerKeys = getProfileBrokerKeys(state.userProfile);
+            loadedBrokers = loadedBrokers.filter((b) => brokerKeys.has(b.id) || brokerKeys.has(b.docId));
+
             // Oculta a caixa de seleção de corretores no topo
             const selectEl = document.getElementById("view-broker-select");
             if(selectEl) selectEl.style.display = "none";
         }
 
         loadedBrokers.sort((a, b) => a.name.localeCompare(b.name));
-        setBrokers(loadedBrokers); 
+        setBrokers(loadedBrokers);
+
+        // Resolve conflitos entre ids antigos (docId) e novos (email) sem quebrar renderização
+        state.appointments = state.appointments
+            .map((a) => ({ ...a, brokerId: normalizeBrokerId(a.brokerId, loadedBrokers) }))
+            .filter((a) => !a.deletedAt);
 
         if (loadedBrokers.length > 0) {
             const hasSelectedBroker = loadedBrokers.some((b) => b.id === state.selectedBrokerId);
@@ -154,9 +173,12 @@ export function setupRealtime(centerDate) {
             appts.push({ id: doc.id, ...doc.data() });
         });
         
+        appts = appts.map((a) => ({ ...a, brokerId: normalizeBrokerId(a.brokerId) }));
+
         // --- NOVA REGRA: SE FOR CORRETOR, BAIXA SÓ OS DELE ---
-        if (state.userProfile && (state.userProfile.role === "broker" || state.userProfile.role === "Corretor")) {
-            appts = appts.filter(a => a.brokerId === state.userProfile.email);
+        if (isBrokerProfile(state.userProfile)) {
+            const brokerKeys = getProfileBrokerKeys(state.userProfile);
+            appts = appts.filter((a) => brokerKeys.has(a.brokerId));
         }
 
         state.appointments = appts.filter((a) => !a.deletedAt);
