@@ -3,12 +3,12 @@ import { getClientList, getPropertyList } from "./utils.js";
 import { renderMain, updateHeaderDate, scrollToBusinessHours } from "./render.js";
 
 export function setupUIInteractions() {
+    document.body.classList.remove("theme-dark");
     setupDropdowns();
     setupSearch();
     setupEventCheckboxLogic();
     setupClientAddButton();
     setupGlobalViewFunctions();
-    setupThemeToggle();
 }
 
 function setupDropdowns() {
@@ -446,33 +446,4 @@ export function addPropertyRow(referenceVal = "", addressVal = "", index = 0, ro
             rBtnContainer.style.display = allRows.length === 1 ? "none" : "flex";
         }
     });
-}
-
-function setupThemeToggle() {
-    const btn = document.getElementById("btn-theme-toggle");
-    if (!btn) return;
-
-    const savedTheme = localStorage.getItem("agenda-theme") || "light";
-    applyTheme(savedTheme);
-
-    btn.onclick = () => {
-        const current = document.body.classList.contains("theme-dark") ? "dark" : "light";
-        const nextTheme = current === "dark" ? "light" : "dark";
-        applyTheme(nextTheme);
-    };
-}
-
-function applyTheme(theme) {
-    const btn = document.getElementById("btn-theme-toggle");
-    const isDark = theme === "dark";
-    document.body.classList.toggle("theme-dark", isDark);
-    localStorage.setItem("agenda-theme", isDark ? "dark" : "light");
-
-    if (btn) {
-        btn.innerHTML = isDark
-            ? '<i class="fas fa-sun"></i>'
-            : '<i class="fas fa-moon"></i>';
-        btn.title = isDark ? 'Ativar tema claro' : 'Ativar tema escuro';
-        btn.setAttribute('aria-label', btn.title);
-    }
 }
