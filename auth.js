@@ -17,6 +17,14 @@ const HIDDEN_USERS = [
     "admin@admin.com"
 ];
 
+function normalizeRole(role) {
+    return String(role || "").trim().toLowerCase();
+}
+
+function isAdminRole(role) {
+    return normalizeRole(role) === "admin";
+}
+
 export function initAuth(initAppCallback) {
     setupLoginForm(initAppCallback);
     
@@ -116,7 +124,7 @@ function handleLoginSuccess(profile, initAppCallback) {
     if(loginScreen) loginScreen.classList.add("hidden");
 
     // Lógica de Roteamento (Admin vs App)
-    if (profile.email === "admin@admin.com") {
+    if (isAdminRole(profile.role)) {
         if(adminPanel) adminPanel.classList.remove("hidden");
         if(navBar) navBar.classList.add("hidden");
         if(appContainer) appContainer.classList.add("hidden");
@@ -131,7 +139,7 @@ function handleLoginSuccess(profile, initAppCallback) {
         updateUserUI(profile);
         
         // Carrega consultoras (se tiver permissão)
-        if (["admin", "consultant"].includes(profile.role)) {
+        if (["admin", "consultant"].includes(normalizeRole(profile.role))) {
             loadConsultantsList();
         }
 
@@ -170,7 +178,7 @@ function updateUserUI(profile) {
     
     const adminPanelBtn = document.getElementById("btn-admin-panel"); 
     if (adminPanelBtn) {
-        if (profile.role === 'admin') adminPanelBtn.classList.remove('hidden');
+        if (isAdminRole(profile.role)) adminPanelBtn.classList.remove('hidden');
         else adminPanelBtn.classList.add('hidden');
     }
 }
