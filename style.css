@@ -221,6 +221,11 @@ body.theme-dark .grid-slot:hover {
     color: #0f172a !important;
 }
 
+#btn-add-client,
+#btn-add-property {
+    background-color: #d3d3d3 !important;
+}
+
 .footer-left { display: flex; flex-wrap: wrap; gap: 8px; }
 #audit-log-container { margin-top:20px; padding:15px; background: #fef2f2; border: 1px solid #fecaca; color: #7f1d1d; border-radius:8px; max-height:200px; overflow-y:auto; font-size:0.75rem; }
 #lock-warning { background: #fff7ed; color: #c2410c; border: 1px solid #ffedd5; padding: 10px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 10px; text-align: center; display: none; }
