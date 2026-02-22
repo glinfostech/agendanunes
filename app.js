@@ -15,9 +15,12 @@ import { initReports } from "./reports.js";
 // 2. INICIALIZAÇÃO E AUTENTICAÇÃO
 initAuth(initApp);
 
+function isBrokerRole(role) {
+    return role === "broker" || role === "Corretor";
+}
 
 function isBrokerProfile(profile) {
-    return !!(profile && (profile.role === "broker" || profile.role === "Corretor"));
+    return !!(profile && isBrokerRole(profile.role));
 }
 
 function getProfileBrokerKeys(profile) {
@@ -35,7 +38,7 @@ function initApp() {
     listenToBrokers(); 
 
     // --- NOVA REGRA: TRAVAR TELA PARA CORRETOR ---
-    if (state.userProfile && (state.userProfile.role === "broker" || state.userProfile.role === "Corretor")) {
+    if (state.userProfile && isBrokerRole(state.userProfile.role)) {
         document.body.classList.add("broker-view-only");
     }
 
