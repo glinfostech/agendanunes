@@ -751,3 +751,74 @@ body.broker-view-only #form-visit textarea {
     background-color: #f8fafc !important; 
     border: 1px dashed #cbd5e1 !important;
 }
+/* ========================================================= */
+/* --- REGRA GLOBAL DE LEGIBILIDADE DE STRINGS POR TEMA --- */
+/* ========================================================= */
+:root {
+    --string-color: #000000;
+    --string-color-muted: #000000;
+}
+
+body.theme-dark {
+    --string-color: #ffffff;
+    --string-color-muted: #ffffff;
+}
+
+/* Força textos legíveis em toda aplicação */
+body,
+body p,
+body span,
+body div,
+body label,
+body strong,
+body small,
+body li,
+body ul,
+body ol,
+body td,
+body th,
+body h1,
+body h2,
+body h3,
+body h4,
+body h5,
+body h6,
+body a,
+body .form-control,
+body input,
+body textarea,
+body select,
+body option,
+body button,
+body .view-pass,
+body .result-sub,
+body .result-meta,
+body .result-date,
+body .user-info,
+body .modal-title,
+body .modal-text,
+body .admin-table td,
+body .admin-table th,
+body .admin-card h3,
+body .placeholder-msg,
+body .pagination-info {
+    color: var(--string-color) !important;
+}
+
+body input::placeholder,
+body textarea::placeholder {
+    color: var(--string-color-muted) !important;
+    opacity: 0.75;
+}
+
+/* Select/options consistentes com tema */
+body select,
+body option {
+    background-color: #ffffff;
+}
+
+body.theme-dark select,
+body.theme-dark option {
+    background-color: #0f172a !important;
+    color: #ffffff !important;
+}
