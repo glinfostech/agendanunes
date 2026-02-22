@@ -12,12 +12,16 @@ export function setupUIInteractions() {
 }
 
 function setupDropdowns() {
-    const opts = BROKERS.map((b) => `<option value="${b.id}">${b.name}</option>`).join("");
+    const formOpts = BROKERS.map((b) => `<option value="${b.id}">${b.name}</option>`).join("");
+    const viewOpts = `<option value="all">Todos os corretores</option>${formOpts}`;
     const brokerSelectView = document.getElementById("view-broker-select");
     const brokerSelectForm = document.getElementById("form-broker");
     
-    if(brokerSelectView) brokerSelectView.innerHTML = opts;
-    if(brokerSelectForm) brokerSelectForm.innerHTML = opts;
+    if(brokerSelectView) {
+        brokerSelectView.innerHTML = viewOpts;
+        if (!brokerSelectView.value) brokerSelectView.value = "all";
+    }
+    if(brokerSelectForm) brokerSelectForm.innerHTML = formOpts;
 
     let times = "";
     for (let h = TIME_START; h < TIME_END; h++) {

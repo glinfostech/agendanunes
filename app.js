@@ -96,9 +96,15 @@ function listenToBrokers() {
         setBrokers(loadedBrokers); 
 
         if (loadedBrokers.length > 0) {
+            const isBrokerUser = state.userProfile && isBrokerRole(state.userProfile.role);
             const hasSelectedBroker = loadedBrokers.some((b) => b.id === state.selectedBrokerId);
-            if (!hasSelectedBroker) {
-                state.selectedBrokerId = loadedBrokers[0].id;
+
+            if (isBrokerUser) {
+                if (!hasSelectedBroker) state.selectedBrokerId = loadedBrokers[0].id;
+            } else {
+                const selectedIsAll = state.selectedBrokerId === "all";
+                if (!selectedIsAll && !hasSelectedBroker) state.selectedBrokerId = "all";
+                if (!state.selectedBrokerId) state.selectedBrokerId = "all";
             }
 
             const selectEl = document.getElementById("view-broker-select");
