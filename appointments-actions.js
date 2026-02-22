@@ -51,6 +51,10 @@ export async function saveAppointmentAction(formData) {
         finalOwnerName = consultantObj ? consultantObj.name : (finalOwnerEmail === oldAppt?.createdBy ? oldAppt.createdByName : finalOwnerEmail);
     }
 
+    const linkedConsultantEmail = String(formData.linkedConsultantEmail || finalOwnerEmail || "").trim();
+    const linkedConsultantObj = state.availableConsultants ? state.availableConsultants.find(c => c.email === linkedConsultantEmail) : null;
+    const linkedConsultantName = linkedConsultantObj ? linkedConsultantObj.name : (linkedConsultantEmail === finalOwnerEmail ? finalOwnerName : linkedConsultantEmail);
+
     // Objeto base para Salvar
     const nowIso = new Date().toISOString();
 
@@ -71,6 +75,9 @@ export async function saveAppointmentAction(formData) {
         propertyAddress: formData.propertyAddress || "",
         clients: formData.clients || [],
         sharedWith: formData.sharedWith || [],
+
+        linkedConsultantEmail,
+        linkedConsultantName,
         
         createdBy: finalOwnerEmail,
         createdByName: finalOwnerName,
