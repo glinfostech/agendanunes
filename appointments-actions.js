@@ -4,11 +4,7 @@ import { checkOverlap, showDialog } from "./utils.js";
 import { 
     doc, addDoc, updateDoc, collection, query, where, writeBatch, getDocs, deleteDoc 
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-import { 
-    handleBrokerNotification, 
-    getConsultantName,
-    isTimeLocked 
-} from "./appointments-core.js";
+import { isTimeLocked } from "./appointments-core.js";
 
 // --- AÇÃO: SALVAR AGENDAMENTO ---
 export async function saveAppointmentAction(formData) {
@@ -55,7 +51,13 @@ export async function saveAppointmentAction(formData) {
         finalOwnerName = consultantObj ? consultantObj.name : (finalOwnerEmail === oldAppt?.createdBy ? oldAppt.createdByName : finalOwnerEmail);
     }
 
+    const linkedConsultantEmail = String(formData.linkedConsultantEmail || finalOwnerEmail || "").trim();
+    const linkedConsultantObj = state.availableConsultants ? state.availableConsultants.find(c => c.email === linkedConsultantEmail) : null;
+    const linkedConsultantName = linkedConsultantObj ? linkedConsultantObj.name : (linkedConsultantEmail === finalOwnerEmail ? finalOwnerName : linkedConsultantEmail);
+
     // Objeto base para Salvar
+    const nowIso = new Date().toISOString();
+
     const appointmentData = {
         brokerId: formData.brokerId,
         date: formData.date,
@@ -73,16 +75,23 @@ export async function saveAppointmentAction(formData) {
         propertyAddress: formData.propertyAddress || "",
         clients: formData.clients || [],
         sharedWith: formData.sharedWith || [],
+
+        linkedConsultantEmail,
+        linkedConsultantName,
         
         createdBy: finalOwnerEmail,
         createdByName: finalOwnerName,
         
-        updatedAt: new Date().toISOString(),
-        updatedBy: state.userProfile.email
+        updatedAt: nowIso,
+        updatedBy: state.userProfile.email,
+        isEdited: !isNew,
+        editedAt: !isNew ? nowIso : null
     };
 
     if (isNew) {
-        appointmentData.createdAt = new Date().toISOString();
+        appointmentData.createdAt = nowIso;
+        appointmentData.isEdited = false;
+        appointmentData.editedAt = null;
         if (!formData.isEvent) {
             const conflict = checkOverlap(appointmentData.brokerId, appointmentData.date, appointmentData.startTime, appointmentData.endTime, null, appointmentData.isEvent);
             if (conflict) throw new Error(conflict);
@@ -123,25 +132,39 @@ export async function saveAppointmentAction(formData) {
     try {
         if (isRecurrent) {
             const batch = writeBatch(db);
-            // Certifique-se de que a função generateRecurrenceDates exista no escopo do arquivo
             const generatedDates = generateRecurrenceDates(formData.date, formData.recurrence.endDate, formData.recurrence.days);
             if (generatedDates.length === 0) throw new Error("Nenhuma data gerada para a recorrência selecionada.");
-            
+
             generatedDates.forEach(dateStr => {
                 const ref = doc(collection(db, "appointments"));
-                const clone = { ...appointmentData, date: dateStr };
+                const clone = { ...appointmentData, date: dateStr, isEdited: false, editedAt: null };
                 batch.set(ref, clone);
             });
             await batch.commit();
-            return { message: `${generatedDates.length} agendamentos criados com recorrência!` };
-        } else {
-            if (isNew) {
-                await addDoc(collection(db, "appointments"), appointmentData);
-            } else {
-                await updateDoc(doc(db, "appointments", id), appointmentData);
-            }
-            return { message: "Agendamento salvo com sucesso!" };
+
+            const firstRecurringAppt = { ...appointmentData, date: generatedDates[0], isEdited: false, editedAt: null };
+            return {
+                message: `${generatedDates.length} agendamentos criados com recorrência!`,
+                actionType: "create",
+                appointment: firstRecurringAppt
+            };
         }
+
+        if (isNew) {
+            const createdRef = await addDoc(collection(db, "appointments"), appointmentData);
+            return {
+                message: "Agendamento salvo com sucesso!",
+                actionType: "create",
+                appointment: { id: createdRef.id, ...appointmentData }
+            };
+        }
+
+        await updateDoc(doc(db, "appointments", id), appointmentData);
+        return {
+            message: "Agendamento salvo com sucesso!",
+            actionType: "update",
+            appointment: { id, ...appointmentData }
+        };
     } catch (error) {
         console.error("Erro ao salvar:", error);
         throw new Error("Falha ao se comunicar com o banco de dados.");
