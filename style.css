@@ -61,12 +61,12 @@ textarea.form-control { resize: vertical; min-height: 80px; font-family: inherit
 /* ==========================================================================
    4. NAVBAR E NAVEGAÇÃO
    ========================================================================== */
-.navbar { background: white; border-bottom: 1px solid var(--border); padding: 0.75rem 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; z-index: 500; box-shadow: var(--shadow); }
-.brand-section { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--primary); font-size: 1.2rem; }
+.navbar { background: white; border-bottom: 1px solid var(--border); padding: 0.75rem 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 12px 16px; flex-wrap: wrap; z-index: 500; box-shadow: var(--shadow); }
+.brand-section { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--primary); font-size: 1.2rem; flex: 1 1 240px; min-width: 220px; }
 
-.controls-section { display: flex; align-items: center; gap: 15px; }
+.controls-section { display: flex; align-items: center; gap: 10px; flex: 1 1 420px; justify-content: flex-end; flex-wrap: wrap; min-width: 260px; }
 
-.date-nav { display: flex; align-items: center; gap: 0.5rem; background: #f1f5f9; padding: 4px; border-radius: 8px; }
+.date-nav { display: flex; align-items: center; gap: 0.5rem; background: #f1f5f9; padding: 4px; border-radius: 8px; flex: 1 1 240px; min-width: 220px; justify-content: space-between; }
 .nav-btn { background: white; border: 1px solid var(--border); border-radius: 6px; width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
 #current-date-label { min-width: 200px; text-align: center; font-size: 0.9rem; font-weight: 600; text-transform: capitalize; }
 #date-static-display { font-family: system-ui, -apple-system, sans-serif; }
@@ -83,7 +83,7 @@ textarea.form-control { resize: vertical; min-height: 80px; font-family: inherit
 /* ==========================================================================
    5. BUSCA (SEARCH)
    ========================================================================== */
-.search-container { position: relative; max-width: 350px; width: 100%; }
+.search-container { position: relative; max-width: 420px; width: 100%; flex: 1 1 320px; min-width: 240px; }
 .search-input { width: 100%; padding: 8px 10px 8px 35px; border-radius: 20px; border: 1px solid var(--border); font-size: 0.9rem; background: #f1f5f9; transition: all 0.2s; }
 .search-input:focus { background: white; border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1); }
 .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.9rem; pointer-events: none; }
@@ -600,13 +600,19 @@ body.theme-dark .form-group label {
     border-color: var(--border) !important;
 }
 
+
+@media (max-width: 1400px) {
+    .search-container { order: 4; max-width: 100%; flex: 1 1 100%; }
+    .controls-section { justify-content: flex-start; }
+}
+
 @media (max-width: 1024px) {
     body { overflow: auto; }
     .navbar { padding: 10px; gap: 10px; align-items: stretch; }
-    .brand-section { width: 100%; }
-    .search-container { max-width: 100%; order: 3; width: 100%; }
-    .date-nav { width: 100%; justify-content: space-between; }
-    .controls-section { width: 100%; justify-content: flex-start; flex-wrap: wrap; gap: 8px; }
+    .brand-section { width: 100%; min-width: 0; }
+    .search-container { max-width: 100%; order: 2; width: 100%; flex-basis: 100%; min-width: 0; }
+    .date-nav { width: 100%; justify-content: space-between; order: 3; }
+    .controls-section { width: 100%; justify-content: flex-start; flex-wrap: wrap; gap: 8px; order: 4; min-width: 0; }
     #current-date-label { min-width: auto; font-size: 0.85rem; }
     .main-content { overflow: auto; }
     .calendar-container { min-width: max-content; }
@@ -763,13 +769,23 @@ body.broker-view-only #form-visit textarea {
     opacity: 1;
 }
 
+button,
+button i,
+.btn,
+.btn i,
+.nav-btn,
+.nav-btn i,
+.view-btn,
+.view-btn i,
+.logout-btn,
+.logout-btn i,
 .btn-secondary,
 .btn-secondary i,
 #btn-admin-panel,
 #btn-admin-panel i,
 #btn-admin-back,
 #btn-admin-back i {
-    color: #0f172a !important;
+    color: #ffffff !important;
 }
 
 /* Mantém boa leitura em campos claros dentro do tema escuro */
