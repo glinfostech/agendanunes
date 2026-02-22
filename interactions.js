@@ -226,6 +226,17 @@ function setupGlobalViewFunctions() {
 }
 
 // --- FUNÇÃO AJUSTADA PARA FLEXBOX E DADOS DE CADASTRO ---
+function refreshClientRemoveButtons() {
+    const container = document.getElementById("clients-container");
+    if (!container) return;
+    const rows = Array.from(container.querySelectorAll(".client-item-row"));
+    rows.forEach((r) => {
+        const btnWrap = r.querySelector(".remove-client-btn-container");
+        if (!btnWrap) return;
+        btnWrap.style.display = rows.length > 1 ? "flex" : "none";
+    });
+}
+
 export function addClientRow(nameVal, phoneVal, addedByVal, index, rowEditable, addedByNameVal = "", addedAtVal = "") {
     const container = document.getElementById("clients-container");
     const row = document.createElement("div");
@@ -315,6 +326,7 @@ export function addClientRow(nameVal, phoneVal, addedByVal, index, rowEditable, 
     // BOTÃO REMOVER
     if (rowEditable) {
         const btnContainer = document.createElement("div");
+        btnContainer.className = "remove-client-btn-container";
         // Ajuste para alinhar verticalmente com os inputs (compensando o label)
         btnContainer.style.display = "flex";
         btnContainer.style.alignItems = "center";
@@ -331,11 +343,15 @@ export function addClientRow(nameVal, phoneVal, addedByVal, index, rowEditable, 
         btnRem.style.cursor = "pointer";
         btnRem.style.fontSize = "1rem";
 
-        btnRem.onclick = () => { row.remove(); };
+        btnRem.onclick = () => {
+            row.remove();
+            refreshClientRemoveButtons();
+        };
         btnContainer.appendChild(btnRem);
         row.appendChild(btnContainer);
     }
     container.appendChild(row);
+    refreshClientRemoveButtons();
 }
 export function addPropertyRow(referenceVal = "", addressVal = "", index = 0, rowEditable = true) {
     const container = document.getElementById("properties-container");

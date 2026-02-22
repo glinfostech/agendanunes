@@ -83,6 +83,7 @@ async function handleDeleteRequest(appt) {
     try {
         const success = await deleteAppointmentAction(appt);
         if (success) {
+            await handleBrokerNotification(appt?.brokerId, null, "delete", appt);
             if(window.closeModal) window.closeModal();
             else document.getElementById("modal").classList.remove("open");
         }
