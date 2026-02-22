@@ -79,12 +79,16 @@ function initApp() {
 
 // --- FUNÇÃO PARA BUSCAR CORRETORES NO BANCO DE DADOS EM TEMPO REAL ---
 function listenToBrokers() {
-    const q = query(collection(db, "users"), where("role", "in", ["broker", "Corretor"]));
+    const q = query(collection(db, "users"), where("role", "in", ["broker", "Corretor", "corretor"]));
     
-    onSnapshot(q, (snapshot) => {
+    onSnapshot(usersRef, (snapshot) => {
         let loadedBrokers = [];
         snapshot.forEach((doc) => {
             const data = doc.data();
+            const role = String(data.role || "").trim().toLowerCase();
+            const isBrokerRole = role === "broker" || role.startsWith("corretor");
+            if (!isBrokerRole) return;
+
             loadedBrokers.push({
                 id: data.email || doc.id,
                 docId: doc.id,
@@ -94,10 +98,6 @@ function listenToBrokers() {
         });
 
         // --- NOVA REGRA: SE FOR CORRETOR, VÊ SÓ ELE MESMO ---
-        if (isBrokerProfile(state.userProfile)) {
-            const rawBrokerKeys = getProfileBrokerKeys(state.userProfile);
-            const brokerKeys = expandBrokerKeysWithCanonicalIds(rawBrokerKeys, loadedBrokers);
-            loadedBrokers = loadedBrokers.filter((b) => brokerKeys.has(b.id) || brokerKeys.has(b.docId));
 
             // Oculta a caixa de seleção de corretores no topo
             const selectEl = document.getElementById("view-broker-select");
@@ -191,10 +191,7 @@ export function setupRealtime(centerDate) {
         appts = appts.map((a) => ({ ...a, brokerId: normalizeBrokerId(a.brokerId) }));
 
         // --- NOVA REGRA: SE FOR CORRETOR, BAIXA SÓ OS DELE ---
-        if (isBrokerProfile(state.userProfile)) {
-            const rawBrokerKeys = getProfileBrokerKeys(state.userProfile);
-            const brokerKeys = expandBrokerKeysWithCanonicalIds(rawBrokerKeys);
-            appts = appts.filter((a) => brokerKeys.has(a.brokerId));
+main
         }
 
         state.appointments = appts.filter((a) => !a.deletedAt);
@@ -202,6 +199,10 @@ export function setupRealtime(centerDate) {
     }, (error) => {
         console.error("Erro no listener realtime:", error);
     });
+}
+
+function isBrokerRole(role) {
+    return ["broker", "Corretor", "corretor"].includes(role);
 }
 async function cleanupExpiredDeletedAppointments() {
     const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
