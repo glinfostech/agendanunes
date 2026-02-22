@@ -776,23 +776,14 @@ body.broker-view-only #form-visit textarea {
     opacity: 1;
 }
 
-button,
-button i,
-.btn,
-.btn i,
-.nav-btn,
-.nav-btn i,
-.view-btn,
-.view-btn i,
-.logout-btn,
-.logout-btn i,
-.btn-secondary,
-.btn-secondary i,
-#btn-admin-panel,
-#btn-admin-panel i,
-#btn-admin-back,
-#btn-admin-back i {
-    color: #ffffff !important;
+/* Navbar: botões de fundo claro precisam de texto/ícone escuros */
+.navbar .btn-secondary,
+.navbar .btn-secondary i,
+.navbar #btn-admin-panel,
+.navbar #btn-admin-panel i,
+.navbar .theme-toggle-btn,
+.navbar .theme-toggle-btn i {
+    color: #0f172a !important;
 }
 
 /* Mantém boa leitura em campos claros dentro do tema escuro */
