@@ -308,19 +308,4 @@ async function loadConsultantsList() {
 
 
     try {
-        const usersScoped = query(collection(db, "users"), where("role", "in", ["consultant", "admin"]));
-        const scopedSnapshot = await getDocs(usersScoped);
-        collectConsultantCandidates(scopedSnapshot, consultantsMap, validRoles);
-    } catch (_) {}
-
-    for (const collectionName of AUTH_COLLECTIONS) {
-        try {
-            const snapshot = await getDocs(collection(db, collectionName));
-            collectConsultantCandidates(snapshot, consultantsMap, validRoles);
-        } catch (_) {}
-    }
-
-    state.availableConsultants = Array.from(consultantsMap.values())
-        .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
-}
 

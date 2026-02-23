@@ -1,7 +1,7 @@
 // app.js
 
 // 1. IMPORTAÇÕES
-import { db, state, setBrokers } from "./config.js"; // <-- setBrokers adicionado
+import { db, state, setBrokers, BROKERS } from "./config.js"; // <-- setBrokers adicionado
 import { updateHeaderDate, renderMain, scrollToBusinessHours } from "./render.js";
 import { 
     collection, query, onSnapshot, where, limit, getDocs, deleteDoc, doc 
@@ -15,17 +15,7 @@ import { initReports } from "./reports.js";
 // 2. INICIALIZAÇÃO E AUTENTICAÇÃO
 initAuth(initApp);
 
-function normalizeRole(role) {
-    if (!role) return "";
-    return String(role).trim().toLowerCase();
-}
 
-function isBrokerRole(role) {
-    const normalizedRole = normalizeRole(role);
-    return normalizedRole === "broker" || normalizedRole === "corretor";
-}
-
-const isBrokerUserRole = isBrokerRole;
 
 // 3. FUNÇÃO PRINCIPAL
 function initApp() {
@@ -62,14 +52,13 @@ function initApp() {
 
 // --- FUNÇÃO PARA BUSCAR CORRETORES NO BANCO DE DADOS EM TEMPO REAL ---
 function listenToBrokers() {
-    // Busca todos os usuários e filtra no cliente para tolerar inconsistências de capitalização/valor do campo role
-    const q = query(collection(db, "users"));
+
     
-    onSnapshot(q, (snapshot) => {
+    onSnapshot(usersRef, (snapshot) => {
         let loadedBrokers = [];
         snapshot.forEach((doc) => {
             const data = doc.data();
-            if (!isBrokerUserRole(data.role)) return;
+
 
             loadedBrokers.push({
                 id: data.email || doc.id,
@@ -80,29 +69,13 @@ function listenToBrokers() {
         });
 
         // --- NOVA REGRA: SE FOR CORRETOR, VÊ SÓ ELE MESMO ---
-        if (state.userProfile && isBrokerRole(state.userProfile.role)) {
-            loadedBrokers = loadedBrokers.filter((b) => (
-                b.id === state.userProfile.email || b.docId === state.userProfile.id
-            ));
-            
+
             // Oculta a caixa de seleção de corretores no topo
             const selectEl = document.getElementById("view-broker-select");
             if(selectEl) selectEl.style.display = "none";
         }
 
-        loadedBrokers.sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
-        setBrokers(loadedBrokers); 
 
-        if (loadedBrokers.length > 0) {
-            const isBrokerUser = state.userProfile && isBrokerRole(state.userProfile.role);
-            const hasSelectedBroker = loadedBrokers.some((b) => b.id === state.selectedBrokerId);
-
-            if (isBrokerUser) {
-                if (!hasSelectedBroker) state.selectedBrokerId = loadedBrokers[0].id;
-            } else {
-                const selectedIsAll = state.selectedBrokerId === "all";
-                if (!selectedIsAll && !hasSelectedBroker) state.selectedBrokerId = "all";
-                if (!state.selectedBrokerId) state.selectedBrokerId = "all";
             }
 
             const selectEl = document.getElementById("view-broker-select");
@@ -175,10 +148,10 @@ export function setupRealtime(centerDate) {
             appts.push({ id: doc.id, ...doc.data() });
         });
         
+        appts = appts.map((a) => ({ ...a, brokerId: normalizeBrokerId(a.brokerId) }));
+
         // --- NOVA REGRA: SE FOR CORRETOR, BAIXA SÓ OS DELE ---
-        if (state.userProfile && isBrokerRole(state.userProfile.role)) {
-            const keys = new Set([state.userProfile.email, state.userProfile.id].filter(Boolean));
-            appts = appts.filter((a) => keys.has(a.brokerId));
+
         }
 
         state.appointments = appts.filter((a) => !a.deletedAt);
@@ -186,6 +159,10 @@ export function setupRealtime(centerDate) {
     }, (error) => {
         console.error("Erro no listener realtime:", error);
     });
+}
+
+function isBrokerRole(role) {
+    return ["broker", "Corretor", "corretor"].includes(role);
 }
 async function cleanupExpiredDeletedAppointments() {
     const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
