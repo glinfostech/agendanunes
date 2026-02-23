@@ -489,8 +489,9 @@ function setupNewAppointmentUI(defaults, inpBroker, brokerStatic, btnChangeBroke
     
     addClientRow("", "", state.userProfile.email, 0, true, state.userProfile.name, nowStr);
 
-    inpStart.value = defaults.time;
-    const [h, m] = defaults.time.split(":").map(Number);
+    const defaultTime = defaults.time || "08:00";
+    inpStart.value = defaultTime;
+    const [h, m] = defaultTime.split(":").map(Number);
     const endH = h + 1 >= 24 ? "24" : (h + 1).toString();
     inpEnd.value = `${endH.padStart(2,"0")}:${m.toString().padStart(2,"0")}`;
     
@@ -505,7 +506,13 @@ function setupNewAppointmentUI(defaults, inpBroker, brokerStatic, btnChangeBroke
     if(inpStatus) inpStatus.value = "agendada";
     if(inpStatusObs) inpStatusObs.value = "";
     if(inpStatusRented) inpStatusRented.checked = false; // NOVO: Garante que vem desmarcado
-    
+
+    const chkIsEvent = document.getElementById("form-is-event");
+    if (chkIsEvent) {
+        chkIsEvent.checked = Boolean(defaults.isEvent);
+        chkIsEvent.dispatchEvent(new Event('change'));
+    }
+
     updateFormState();
 }
 
