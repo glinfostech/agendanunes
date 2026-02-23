@@ -49,9 +49,6 @@ export function getFormDataFromUI() {
     const ownerSelect = document.getElementById("form-owner-select");
     let adminSelectedOwner = ownerSelect ? ownerSelect.value : null;
 
-    const linkedConsultantSelect = document.getElementById("form-linked-consultant");
-    const linkedConsultantEmail = linkedConsultantSelect ? linkedConsultantSelect.value : "";
-
     // Elementos de Status (Novos)
     const statusEl = document.getElementById("form-status");
     const statusObsEl = document.getElementById("form-status-obs");
@@ -82,7 +79,7 @@ export function getFormDataFromUI() {
             days: recurrenceDays
         },
         adminSelectedOwner,
-        linkedConsultantEmail
+        linkedConsultantEmail: ""
     };
 }
 
@@ -110,7 +107,6 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
     const inpEventComment = document.getElementById("form-event-comment");
     const inpStart = document.getElementById("form-start");
     const inpEnd = document.getElementById("form-end");
-    const inpLinkedConsultant = document.getElementById("form-linked-consultant");
 
     // --- ELEMENTOS DE STATUS ---
     const inpStatus = document.getElementById("form-status");
@@ -131,7 +127,6 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
     // --- PREENCHIMENTO CAMPOS ---
     populateBrokerField(inpBroker, null, null, appt, defaults);
     populateDateField(inpDate, null, null, appt, defaults);
-    populateLinkedConsultantField(inpLinkedConsultant, appt);
 
     whatsContainer.innerHTML = ""; 
     lockWarning.style.display = "none";
@@ -228,7 +223,6 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
         inpDate.disabled = disableCore;
         inpStart.disabled = disableCore;
         inpEnd.disabled = disableCore;
-        if (inpLinkedConsultant) inpLinkedConsultant.disabled = disableCore;
         togglePropertiesDisabled(disableCore || isEvt, disableCore);
         inpEventComment.disabled = disableCore;
         chkIsEvent.disabled = disableCore;
@@ -410,27 +404,6 @@ function populateDateField(inpDate, dateStatic, btnChangeDate, appt, defaults) {
     inpDate.classList.remove("hidden");
 }
 
-function populateLinkedConsultantField(selectEl, appt) {
-    if (!selectEl) return;
-
-    const fallbackEmail = appt?.linkedConsultantEmail || appt?.createdBy || state.userProfile?.email || "";
-    const currentName = appt?.linkedConsultantName || appt?.createdByName || "";
-
-    let options = '<option value="">Selecione um consultor</option>';
-    const sortedConsultants = [...(state.availableConsultants || [])].sort((a, b) => a.name.localeCompare(b.name));
-    sortedConsultants.forEach((c) => {
-        const selected = c.email === fallbackEmail ? 'selected' : '';
-        options += `<option value="${c.email}" ${selected}>${c.name}</option>`;
-    });
-
-    if (fallbackEmail && !sortedConsultants.find((c) => c.email === fallbackEmail)) {
-        options += `<option value="${fallbackEmail}" selected>${currentName || fallbackEmail} (Inativo)</option>`;
-    }
-
-    selectEl.innerHTML = options;
-    if (fallbackEmail) selectEl.value = fallbackEmail;
-}
-
 function enforceClientRowPermissions(isLocked, isCoreEditor, isEvtMode) {
     const rows = document.querySelectorAll(".client-item-row");
     if(isEvtMode) return; 
@@ -489,8 +462,9 @@ function setupNewAppointmentUI(defaults, inpBroker, brokerStatic, btnChangeBroke
     
     addClientRow("", "", state.userProfile.email, 0, true, state.userProfile.name, nowStr);
 
-    inpStart.value = defaults.time;
-    const [h, m] = defaults.time.split(":").map(Number);
+    const defaultTime = defaults.time || "08:00";
+    inpStart.value = defaultTime;
+    const [h, m] = defaultTime.split(":").map(Number);
     const endH = h + 1 >= 24 ? "24" : (h + 1).toString();
     inpEnd.value = `${endH.padStart(2,"0")}:${m.toString().padStart(2,"0")}`;
     
@@ -505,7 +479,13 @@ function setupNewAppointmentUI(defaults, inpBroker, brokerStatic, btnChangeBroke
     if(inpStatus) inpStatus.value = "agendada";
     if(inpStatusObs) inpStatusObs.value = "";
     if(inpStatusRented) inpStatusRented.checked = false; // NOVO: Garante que vem desmarcado
-    
+
+    const chkIsEvent = document.getElementById("form-is-event");
+    if (chkIsEvent) {
+        chkIsEvent.checked = Boolean(defaults.isEvent);
+        chkIsEvent.dispatchEvent(new Event('change'));
+    }
+
     updateFormState();
 }
 

@@ -14,15 +14,16 @@ export function initReports() {
 }
 
 function injectReportButton() {
-    const navbar = document.querySelector(".navbar .brand-section");
-    if (!navbar || document.querySelector(".btn-report")) return;
+    const controls = document.querySelector(".navbar .controls-section");
+    if (!controls || document.querySelector(".btn-report")) return;
 
     const btn = document.createElement("button");
     btn.className = "btn-report";
+    btn.type = "button";
     btn.innerHTML = `<i class="fas fa-chart-line"></i> Relatórios`;
     btn.onclick = openReportModal;
-    btn.style.marginLeft = "15px";
-    navbar.appendChild(btn);
+
+    controls.prepend(btn);
 }
 
 function injectReportModal() {

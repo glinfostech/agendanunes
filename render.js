@@ -283,11 +283,11 @@ function renderMonthView(grid) {
       cell.appendChild(dot);
     });
     
-    cell.onclick = (e) => { 
-        if (e.target === cell || e.target.className === "month-cell-header") { 
-            state.currentDate = new Date(y, m, d); 
-            window.setView("day"); 
-        } 
+    cell.onclick = (e) => {
+      if (e.target !== cell && e.target.className !== "month-cell-header") return;
+
+      state.currentDate = new Date(y, m, d);
+      window.setView("day");
     };
     grid.appendChild(cell);
   }

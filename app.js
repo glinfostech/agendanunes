@@ -1,115 +1,137 @@
 // app.js
-
-// 1. IMPORTAÇÕES
-import { db, state, setBrokers, BROKERS } from "./config.js"; // <-- setBrokers adicionado
+import { db, state, setBrokers } from "./config.js";
 import { updateHeaderDate, renderMain, scrollToBusinessHours } from "./render.js";
-import { 
-    collection, query, onSnapshot, where, limit, getDocs, deleteDoc, doc 
+import {
+    collection,
+    query,
+    onSnapshot,
+    where,
+    limit,
+    getDocs,
+    deleteDoc,
+    doc
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 import { initAuth } from "./auth.js";
 import { setupUIInteractions } from "./interactions.js";
 import { setupAppointmentLogic } from "./appointments.js";
-import { initReports } from "./reports.js"; 
+import { initReports } from "./reports.js";
 
-// 2. INICIALIZAÇÃO E AUTENTICAÇÃO
+const usersRef = collection(db, "users");
+
+// 1. INICIALIZAÇÃO E AUTENTICAÇÃO
 initAuth(initApp);
 
+function normalizeRole(role) {
+    return String(role || "").trim().toLowerCase();
+}
+
 function isBrokerRole(role) {
-    return role === "broker" || role === "Corretor";
+    const normalized = normalizeRole(role);
+    return normalized === "broker" || normalized === "corretor";
 }
 
+function normalizeBrokerId(value) {
+    return String(value || "").trim().toLowerCase();
 }
 
-// 3. FUNÇÃO PRINCIPAL
+// 2. FUNÇÃO PRINCIPAL
 function initApp() {
-    listenToBrokers(); 
+    listenToBrokers();
 
-    // --- NOVA REGRA: TRAVAR TELA PARA CORRETOR ---
     if (state.userProfile && isBrokerRole(state.userProfile.role)) {
         document.body.classList.add("broker-view-only");
+    } else {
+        document.body.classList.remove("broker-view-only");
     }
 
     if (!state.appInitialized) {
         setupUIInteractions();
         setupAppointmentLogic();
         state.appInitialized = true;
-        
+
         renderUserInfo();
 
         setTimeout(() => {
-            if (state.userProfile && normalizeRole(state.userProfile.role) === 'admin') {
-                initReports(); 
+            if (state.userProfile && normalizeRole(state.userProfile.role) === "admin") {
+                initReports();
             }
-            renderUserInfo(); 
+            renderUserInfo();
         }, 1000);
     }
+
     cleanupExpiredDeletedAppointments().catch((e) => console.error("Erro na limpeza de excluídos:", e));
 
     const baseDate = state.currentDate || new Date();
     setupRealtime(baseDate);
-    
+
     updateHeaderDate();
     renderMain();
     scrollToBusinessHours();
 }
 
-// --- FUNÇÃO PARA BUSCAR CORRETORES NO BANCO DE DADOS EM TEMPO REAL ---
+// 3. BUSCAR CORRETORES NO BANCO EM TEMPO REAL
 function listenToBrokers() {
-    
     onSnapshot(usersRef, (snapshot) => {
-        let loadedBrokers = [];
-        snapshot.forEach((doc) => {
-            const data = doc.data();
+        const loadedBrokers = [];
+
+        snapshot.forEach((userDoc) => {
+            const data = userDoc.data() || {};
+            if (!isBrokerRole(data.role)) return;
+
+            const normalizedEmail = normalizeBrokerId(data.email || userDoc.id);
+            if (!normalizedEmail) return;
 
             loadedBrokers.push({
-                id: data.email || doc.id,
-                docId: doc.id,
-                name: data.name,
-                phone: data.phone || "" 
+                id: normalizedEmail,
+                docId: userDoc.id,
+                name: data.name || normalizedEmail,
+                phone: data.phone || ""
             });
         });
 
-        // --- NOVA REGRA: SE FOR CORRETOR, VÊ SÓ ELE MESMO ---
-            // Oculta a caixa de seleção de corretores no topo
-            const selectEl = document.getElementById("view-broker-select");
-            if(selectEl) selectEl.style.display = "none";
-        }
+        loadedBrokers.sort((a, b) => a.name.localeCompare(b.name));
+        setBrokers(loadedBrokers);
 
-            }
-
+        if (state.userProfile && isBrokerRole(state.userProfile.role)) {
+            state.selectedBrokerId = normalizeBrokerId(state.userProfile.email || state.userProfile.id);
             const selectEl = document.getElementById("view-broker-select");
-            if (selectEl) selectEl.value = state.selectedBrokerId;
-        } else {
+            if (selectEl) selectEl.style.display = "none";
+        } else if (!state.selectedBrokerId) {
             state.selectedBrokerId = "all";
         }
 
-        renderMain(); 
-        
+        const selectEl = document.getElementById("view-broker-select");
+        if (selectEl && state.selectedBrokerId) {
+            selectEl.value = state.selectedBrokerId;
+        }
+
+        renderMain();
+
         if (typeof window.populateBrokerSelect === "function") window.populateBrokerSelect();
         if (typeof window.populateAllBrokerSelects === "function") window.populateAllBrokerSelects();
     });
 }
+
 function renderUserInfo() {
     if (!state.userProfile) return;
-    
-    // Mapeamento de cargos
+
     const rolesMap = {
-        'admin': 'Administrador',
-        'consultant': 'Consultora',
-        'broker': 'Corretor'
+        admin: "Administrador",
+        consultant: "Consultora",
+        broker: "Corretor",
+        corretor: "Corretor"
     };
 
-    const userInfoDiv = document.querySelector('.user-info');
+    const userInfoDiv = document.querySelector(".user-info");
     if (userInfoDiv) {
-        // Busca no mapa ou usa 'Corretor' como padrão caso não encontre
-        const roleDisplay = rolesMap[state.userProfile.role] || 'Corretor';
+        const roleDisplay = rolesMap[normalizeRole(state.userProfile.role)] || "Corretor";
 
         userInfoDiv.innerHTML = `
-            <div style="font-weight:700; font-size:0.9rem;">${state.userProfile.name}</div>
+            <div style="font-weight:700; font-size:0.9rem;">${state.userProfile.name || "Usuário"}</div>
             <div style="font-size:0.75rem; color:#64748b;">${roleDisplay}</div>
         `;
-        userInfoDiv.style.display = 'block';
+        userInfoDiv.style.display = "block";
     }
 }
 
@@ -127,8 +149,8 @@ export function setupRealtime(centerDate) {
 
     const formatDate = (dateObj) => {
         const y = dateObj.getFullYear();
-        const m = String(dateObj.getMonth() + 1).padStart(2, '0');
-        const d = String(dateObj.getDate()).padStart(2, '0');
+        const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+        const d = String(dateObj.getDate()).padStart(2, "0");
         return `${y}-${m}-${d}`;
     };
 
@@ -136,33 +158,36 @@ export function setupRealtime(centerDate) {
     const endString = formatDate(endDate);
 
     const q = query(
-        collection(db, "appointments"), 
+        collection(db, "appointments"),
         where("date", ">=", startString),
         where("date", "<=", endString),
-        limit(2000) 
+        limit(2000)
     );
-    
-    state.unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
-        let appts = [];
-        snapshot.forEach((doc) => {
-            appts.push({ id: doc.id, ...doc.data() });
-        });
-        
-        appts = appts.map((a) => ({ ...a, brokerId: normalizeBrokerId(a.brokerId) }));
 
-        // --- NOVA REGRA: SE FOR CORRETOR, BAIXA SÓ OS DELE ---
+    state.unsubscribeSnapshot = onSnapshot(
+        q,
+        (snapshot) => {
+            let appts = [];
+            snapshot.forEach((entry) => {
+                appts.push({ id: entry.id, ...entry.data() });
+            });
+
+            appts = appts.map((a) => ({ ...a, brokerId: normalizeBrokerId(a.brokerId) }));
+
+            if (state.userProfile && isBrokerRole(state.userProfile.role)) {
+                const ownBrokerId = normalizeBrokerId(state.userProfile.email || state.userProfile.id);
+                appts = appts.filter((a) => a.brokerId === ownBrokerId);
+            }
+
+            state.appointments = appts.filter((a) => !a.deletedAt);
+            renderMain();
+        },
+        (error) => {
+            console.error("Erro no listener realtime:", error);
         }
-
-        state.appointments = appts.filter((a) => !a.deletedAt);
-        renderMain();
-    }, (error) => {
-        console.error("Erro no listener realtime:", error);
-    });
+    );
 }
 
-function isBrokerRole(role) {
-    return ["broker", "Corretor", "corretor"].includes(role);
-}
 async function cleanupExpiredDeletedAppointments() {
     const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
     const cutoff = Date.now() - THIRTY_DAYS_MS;
