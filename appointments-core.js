@@ -42,7 +42,7 @@ export function getConsultantName(email) {
     return email.split("@")[0].charAt(0).toUpperCase() + email.split("@")[0].slice(1);
 }
 
-export async function sendWhatsapp(name, phone, appt, brokerName, isUpdate = false) {
+export async function sendWhatsapp(name, phone, appt, brokerName, actionType = "create") {
     if (!phone) return showDialog("Erro", "Telefone não encontrado.");
 
     const dateParts = appt.date.split("-");
@@ -53,10 +53,26 @@ export async function sendWhatsapp(name, phone, appt, brokerName, isUpdate = fal
     if (!cleanPhone.startsWith("55")) cleanPhone = "55" + cleanPhone;
 
     let msg = "";
-    if (isUpdate) {
-        msg = `*ATUALIZAÇÃO DE VISITA*\nOlá ${brokerName}, houve uma alteração:\n📅 Data: ${formattedDate}\n⏰ Hora: ${appt.startTime}\n📍 Endereço: ${firstProperty.propertyAddress}\n👤 Cliente: ${name}`;
+    if (actionType === "update") {
+        msg = `*ATUALIZAÇÃO DE VISITA*
+Olá ${brokerName}, houve uma alteração:
+📅 Data: ${formattedDate}
+⏰ Hora: ${appt.startTime}
+📍 Endereço: ${firstProperty.propertyAddress}
+👤 Cliente: ${name}`;
+    } else if (actionType === "delete") {
+        msg = `*VISITA CANCELADA/EXCLUÍDA*
+Olá ${brokerName}, um agendamento foi apagado:
+📅 Data: ${formattedDate}
+⏰ Hora: ${appt.startTime}
+📍 Endereço: ${firstProperty.propertyAddress}
+👤 Cliente: ${name}`;
     } else {
-        msg = `Olá ${brokerName}, nova visita agendada:\n📅 Data: ${formattedDate}\n⏰ Hora: ${appt.startTime}\n📍 Endereço: ${firstProperty.propertyAddress}\n👤 Cliente: ${name}`;
+        msg = `Olá ${brokerName}, nova visita agendada:
+📅 Data: ${formattedDate}
+⏰ Hora: ${appt.startTime}
+📍 Endereço: ${firstProperty.propertyAddress}
+👤 Cliente: ${name}`;
     }
 
     if (firstProperty.reference) msg += `\nRef: ${firstProperty.reference}`;
@@ -88,20 +104,39 @@ export async function handleBrokerNotification(brokerId, brokerName, actionType,
     try {
         if (!appointmentData || appointmentData.isEvent) return;
         if (!brokerId) return;
+        if (!["create", "update", "delete"].includes(actionType)) return;
 
-        if (actionType === "create") {
-            console.log(`Notificação create preparada para ${brokerName || brokerId}`);
+        const broker = state.brokers.find((b) => b.id === brokerId || b.docId === brokerId);
+        const resolvedBrokerName = brokerName || broker?.name || "Corretor";
+        const brokerPhone = broker?.phone || getBrokerPhoneByName(resolvedBrokerName);
+
+        if (!brokerPhone) {
+            const actionLabel = actionType === "delete" ? "apagado" : "salvo";
+            await showDialog("Aviso", `Agendamento ${actionLabel}, mas o corretor ${resolvedBrokerName} não possui telefone cadastrado.`);
             return;
         }
 
-        if (actionType === "update") {
-            console.log(`Notificação update preparada para ${brokerName || brokerId}`);
-            return;
-        }
+        const clients = Array.isArray(appointmentData.clients) ? appointmentData.clients : [];
+        const firstClient = clients.find((c) => String(c?.name || "").trim()) || { name: "Cliente" };
 
-        if (actionType === "delete") {
-            console.log(`Notificação delete preparada para ${brokerName || brokerId}`);
-        }
+        const promptByAction = {
+            create: `Agendamento criado com sucesso. Deseja enviar no WhatsApp para ${resolvedBrokerName}?`,
+            update: `Agendamento editado com sucesso. Deseja enviar atualização para ${resolvedBrokerName}?`,
+            delete: `Agendamento apagado com sucesso. Deseja avisar ${resolvedBrokerName} no WhatsApp?`
+        };
+
+        const shouldSend = await showDialog(
+            "Notificação WhatsApp",
+            promptByAction[actionType],
+            [
+                { text: "Agora não", value: false, class: "btn-cancel" },
+                { text: "Enviar", value: true, class: "btn-confirm" }
+            ]
+        );
+
+        if (!shouldSend) return;
+
+        await sendWhatsapp(firstClient.name, brokerPhone, appointmentData, resolvedBrokerName, actionType);
     } catch (e) {
         console.error("Erro na notificação (ignorado para não travar):", e);
     }

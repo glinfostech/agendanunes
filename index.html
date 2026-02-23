@@ -36,9 +36,14 @@
             <i class="fas fa-user-shield" style="color: var(--primary); font-size: 1.5rem;"></i>
             <h2>Gestão de Usuários</h2>
         </div>
-        <button id="btn-admin-logout" class="btn-logout">
-            <i class="fas fa-sign-out-alt"></i> Sair
-        </button>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <button id="btn-admin-back" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar para Agenda
+            </button>
+            <button id="btn-admin-logout" class="btn-logout">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </button>
+        </div>
     </header>
 
     <div class="admin-content">
@@ -66,8 +71,6 @@
                         <option value="" style="color: pink" selected hidden>Função...</option>
                         <option value="broker">Corretor</option>
                         <option value="consultant">Consultora</option>
-                        <option value="admin">Administrador</option>
-                        <option value="master">Master (TI)</option>
                     </select>
                 </div>
                 
@@ -131,8 +134,8 @@
                 <button class="view-btn" onclick="setView('week')" id="btn-week">Semana</button>
                 <button class="view-btn" onclick="setView('month')" id="btn-month">Mês</button>
             </div>
-            <button id="btn-theme-toggle" class="btn btn-secondary btn-sm theme-toggle-btn" type="button" aria-label="Alternar tema" title="Alternar tema">
-                <i class="fas fa-moon"></i>
+            <button id="btn-admin-panel" class="btn btn-secondary btn-sm hidden" type="button">
+                <i class="fas fa-user-plus"></i> Cadastrar
             </button>
             <div class="user-menu">
                 <div class="user-info">
@@ -230,6 +233,13 @@
                     <button type="button" id="btn-add-property" class="btn btn-secondary btn-sm">
                         <i class="fas fa-plus"></i> Imóvel
                     </button>
+
+                    <div id="linked-consultant-section" class="form-group" style="margin-top: 12px;">
+                        <label for="form-linked-consultant">Consultor Vinculado</label>
+                        <select id="form-linked-consultant" class="form-control">
+                            <option value="">Selecione um consultor</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div id="event-fields-container" class="hidden" style="margin-bottom: 15px;">
@@ -262,7 +272,7 @@
 
                 <div id="share-section" class="hidden">
                     <div class="section-divider" style="display:flex; align-items:center; justify-content:space-between;">
-                        <span>Compartilhar</span>
+                        <span id="share-section-title">Consultores Compartilhados</span>
                         <button type="button" id="btn-select-all" class="btn btn-secondary btn-xs">Todas</button>
                     </div>
                     <div class="checkbox-group" id="share-checkboxes"></div>
