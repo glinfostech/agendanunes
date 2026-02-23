@@ -25,10 +25,7 @@ function isBrokerRole(role) {
     return normalizedRole === "broker" || normalizedRole === "corretor";
 }
 
-function isBrokerUserRole(role) {
-    const normalizedRole = normalizeRole(role);
-    return normalizedRole === "broker" || normalizedRole === "corretor";
-}
+const isBrokerUserRole = isBrokerRole;
 
 // 3. FUNÇÃO PRINCIPAL
 function initApp() {

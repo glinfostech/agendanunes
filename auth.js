@@ -284,38 +284,39 @@ function updateUserUI(profile) {
 }
 
 // --- CORREÇÃO AQUI: FILTRAR USUÁRIOS OCULTOS ---
+function collectConsultantCandidates(snapshot, consultantsMap, validRoles) {
+    snapshot.docs.forEach((userDoc) => {
+        const data = userDoc.data() || {};
+        const role = normalizeRole(data.role);
+        if (!validRoles.has(role)) return;
+
+        const email = normalizeEmail(data.email || userDoc.id);
+        if (!email || HIDDEN_USERS.includes(email)) return;
+
+        if (!consultantsMap.has(email)) {
+            consultantsMap.set(email, {
+                email,
+                name: data.name || email
+            });
+        }
+    });
+}
+
 async function loadConsultantsList() {
     const validRoles = new Set(["consultant", "consultora", "admin"]);
     const consultantsMap = new Map();
 
-    const collectFromSnapshot = (snapshot) => {
-        snapshot.docs.forEach((userDoc) => {
-            const data = userDoc.data() || {};
-            const role = normalizeRole(data.role);
-            if (!validRoles.has(role)) return;
-
-            const email = normalizeEmail(data.email || userDoc.id);
-            if (!email || HIDDEN_USERS.includes(email)) return;
-
-            if (!consultantsMap.has(email)) {
-                consultantsMap.set(email, {
-                    email,
-                    name: data.name || email
-                });
-            }
-        });
-    };
 
     try {
         const usersScoped = query(collection(db, "users"), where("role", "in", ["consultant", "admin"]));
         const scopedSnapshot = await getDocs(usersScoped);
-        collectFromSnapshot(scopedSnapshot);
+        collectConsultantCandidates(scopedSnapshot, consultantsMap, validRoles);
     } catch (_) {}
 
     for (const collectionName of AUTH_COLLECTIONS) {
         try {
             const snapshot = await getDocs(collection(db, collectionName));
-            collectFromSnapshot(snapshot);
+            collectConsultantCandidates(snapshot, consultantsMap, validRoles);
         } catch (_) {}
     }
 
