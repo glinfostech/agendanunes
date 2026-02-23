@@ -2,7 +2,7 @@
 import { db, state, BROKERS } from "./config.js";
 import { checkOverlap, showDialog } from "./utils.js";
 import { 
-    doc, addDoc, updateDoc, collection, query, where, writeBatch, getDocs, deleteDoc 
+    doc, addDoc, updateDoc, collection, writeBatch
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 import { isTimeLocked } from "./appointments-core.js";
 
@@ -174,7 +174,10 @@ export async function saveAppointmentAction(formData) {
 // --- AÇÃO: DELETAR AGENDAMENTO ---
 export async function deleteAppointmentAction(appt) {
     try {
-        await deleteDoc(doc(db, "appointments", appt.id));
+        await updateDoc(doc(db, "appointments", appt.id), {
+            deletedAt: new Date().toISOString(),
+            deletedBy: state.userProfile?.email || "unknown"
+        });
         return true;
     } catch (err) {
         console.error("Erro ao deletar:", err);
