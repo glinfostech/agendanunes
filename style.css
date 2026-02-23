@@ -61,13 +61,14 @@ textarea.form-control { resize: vertical; min-height: 80px; font-family: inherit
 /* ==========================================================================
    4. NAVBAR E NAVEGAÇÃO
    ========================================================================== */
-.navbar { background: white; border-bottom: 1px solid var(--border); padding: 0.75rem 1rem; display: grid; grid-template-columns: minmax(180px, 240px) minmax(260px, 1fr) minmax(260px, 340px) auto; align-items: center; gap: 12px; z-index: 500; box-shadow: var(--shadow); }
+.navbar { background: white; border-bottom: 1px solid var(--border); padding: 0.75rem 1rem; display: grid; grid-template-columns: minmax(220px, 290px) minmax(280px, 1fr) minmax(260px, 360px) auto; align-items: center; gap: 12px; z-index: 500; box-shadow: var(--shadow); }
 .brand-section { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--primary); font-size: 1.2rem; min-width: 0; }
 .brand-text-wrap { min-width: 0; display: flex; flex-direction: column; justify-content: center; }
-.brand-title { white-space: nowrap; line-height: 1; font-size: 1.95rem; font-weight: 800; }
+.brand-title { white-space: nowrap; line-height: 1; font-size: clamp(1.55rem, 2.2vw, 2.05rem); font-weight: 800; }
 .brand-subtitle { font-size: 0.65rem; color: #818cf8; font-style: italic; font-weight: 400; line-height: 1.1; white-space: nowrap; }
 
-.controls-section { display: flex; align-items: center; gap: 10px; justify-content: flex-end; flex-wrap: nowrap; min-width: 0; }
+.controls-section { display: flex; align-items: center; gap: 10px; justify-content: flex-end; flex-wrap: wrap; min-width: 0; }
+.controls-section > * { max-width: 100%; }
 
 .date-nav { display: flex; align-items: center; gap: 0.5rem; background: #f1f5f9; padding: 4px; border-radius: 8px; min-width: 0; justify-content: space-between; }
 .nav-btn { background: white; border: 1px solid var(--border); border-radius: 6px; width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
@@ -637,9 +638,13 @@ body.theme-dark .form-group label {
 }
 
 
-@media (max-width: 1400px) {
-    .navbar { grid-template-columns: minmax(170px, 230px) minmax(220px, 1fr) minmax(220px, 320px) auto; }
-    .controls-section { gap: 8px; }
+@media (max-width: 1600px) {
+    .navbar { grid-template-columns: minmax(210px, 280px) minmax(260px, 1fr); align-items: stretch; }
+    .brand-section { grid-column: 1; }
+    .search-container { grid-column: 2; }
+    .date-nav { grid-column: 1; }
+    .controls-section { grid-column: 2; justify-content: flex-start; gap: 8px; }
+    .user-menu { margin-left: auto; }
 }
 
 @media (max-width: 1024px) {
