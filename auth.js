@@ -284,18 +284,28 @@ function updateUserUI(profile) {
 }
 
 // --- CORREÇÃO AQUI: FILTRAR USUÁRIOS OCULTOS ---
-async function loadConsultantsList() {
-    try {
-        const q = query(collection(db, "users"), where("role", "in", ["consultant", "admin"]));
-        const snapshot = await getDocs(q);
-        
-        state.availableConsultants = snapshot.docs
-          .map((doc) => ({ email: normalizeEmail(doc.data().email || doc.id), name: doc.data().name || "" }))
-          // FILTRO: Remove quem estiver na lista HIDDEN_USERS
-          .filter(u => !HIDDEN_USERS.includes(normalizeEmail(u.email)))
-          .sort((a, b) => a.name.localeCompare(b.name));
-          
-    } catch (e) {
-        // Silencioso
-    }
+function collectConsultantCandidates(snapshot, consultantsMap, validRoles) {
+    snapshot.docs.forEach((userDoc) => {
+        const data = userDoc.data() || {};
+        const role = normalizeRole(data.role);
+        if (!validRoles.has(role)) return;
+
+        const email = normalizeEmail(data.email || userDoc.id);
+        if (!email || HIDDEN_USERS.includes(email)) return;
+
+        if (!consultantsMap.has(email)) {
+            consultantsMap.set(email, {
+                email,
+                name: data.name || email
+            });
+        }
+    });
 }
+
+async function loadConsultantsList() {
+    const validRoles = new Set(["consultant", "consultora", "admin"]);
+    const consultantsMap = new Map();
+
+
+    try {
+

@@ -15,11 +15,7 @@ import { initReports } from "./reports.js";
 // 2. INICIALIZAÇÃO E AUTENTICAÇÃO
 initAuth(initApp);
 
-function isBrokerRole(role) {
-    return role === "broker" || role === "Corretor";
-}
 
-}
 
 // 3. FUNÇÃO PRINCIPAL
 function initApp() {
@@ -56,11 +52,13 @@ function initApp() {
 
 // --- FUNÇÃO PARA BUSCAR CORRETORES NO BANCO DE DADOS EM TEMPO REAL ---
 function listenToBrokers() {
+
     
     onSnapshot(usersRef, (snapshot) => {
         let loadedBrokers = [];
         snapshot.forEach((doc) => {
             const data = doc.data();
+
 
             loadedBrokers.push({
                 id: data.email || doc.id,
@@ -71,10 +69,12 @@ function listenToBrokers() {
         });
 
         // --- NOVA REGRA: SE FOR CORRETOR, VÊ SÓ ELE MESMO ---
+
             // Oculta a caixa de seleção de corretores no topo
             const selectEl = document.getElementById("view-broker-select");
             if(selectEl) selectEl.style.display = "none";
         }
+
 
             }
 
@@ -151,6 +151,7 @@ export function setupRealtime(centerDate) {
         appts = appts.map((a) => ({ ...a, brokerId: normalizeBrokerId(a.brokerId) }));
 
         // --- NOVA REGRA: SE FOR CORRETOR, BAIXA SÓ OS DELE ---
+
         }
 
         state.appointments = appts.filter((a) => !a.deletedAt);
