@@ -1,30 +1,35 @@
-import { state } from "./config.js";
+import { state, BROKERS } from "./config.js";
 import { showDialog, getPropertyList } from "./utils.js";
 
-// --- MAPEAMENTO DE TELEFONES DOS CORRETORES ---
-// --- BUSCA DINÂMICA DE TELEFONE ---
-export function getBrokerPhoneByName(name) {
-    if (!name) return null;
-    
-    // Procura o corretor pelo nome na lista que veio do banco de dados
-    const broker = state.brokers.find(b => 
-        b.name.toLowerCase() === name.toLowerCase() || 
-        name.toLowerCase().includes(b.name.toLowerCase())
-    );
+function normalizeValue(v) {
+    return String(v || "").trim().toLowerCase();
+}
 
-    // Se achou o corretor e ele possui telefone cadastrado no CRUD, retorna.
-    if (broker && broker.phone) {
-        return broker.phone;
-    }
-    
-    return null;
+function normalizePhone(phone) {
+    let cleanPhone = String(phone || "").replace(/\D/g, "");
+    if (!cleanPhone) return "";
+    if (!cleanPhone.startsWith("55")) cleanPhone = `55${cleanPhone}`;
+    return cleanPhone;
+}
+
+function getBrokerByIdOrName(brokerId, brokerName) {
+    const idNorm = normalizeValue(brokerId);
+    const nameNorm = normalizeValue(brokerName);
+
+    return BROKERS.find((b) => {
+        const brokerIdNorm = normalizeValue(b.id || b.docId || b.email);
+        const brokerNameNorm = normalizeValue(b.name);
+        if (idNorm && brokerIdNorm === idNorm) return true;
+        if (nameNorm && brokerNameNorm === nameNorm) return true;
+        return false;
+    }) || null;
 }
 
 export function isTimeLocked(dateStr, timeStr) {
     if (!dateStr || !timeStr) return false;
     const now = new Date();
-    const [y, m, d] = dateStr.split('-').map(Number);
-    const [h, min] = timeStr.split(':').map(Number);
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const [h, min] = timeStr.split(":").map(Number);
     const apptDate = new Date(y, m - 1, d, h, min);
     return apptDate < new Date(now.getTime() - 60000);
 }
@@ -36,43 +41,27 @@ export function getLockMessage() {
 export function getConsultantName(email) {
     if (!email) return "";
     if (state.availableConsultants) {
-        const found = state.availableConsultants.find(c => c.email === email);
+        const found = state.availableConsultants.find((c) => c.email === email);
         if (found) return found.name;
     }
     return email.split("@")[0].charAt(0).toUpperCase() + email.split("@")[0].slice(1);
 }
 
 export async function sendWhatsapp(name, phone, appt, brokerName, actionType = "create") {
-    if (!phone) return showDialog("Erro", "Telefone não encontrado.");
+    const cleanPhone = normalizePhone(phone);
+    if (!cleanPhone) {
+        return showDialog("Erro", "Telefone do corretor não encontrado no perfil.");
+    }
 
-    const dateParts = appt.date.split("-");
-    const formattedDate = `${dateParts[2]}/${dateParts[1]}`;
+    const dateParts = String(appt.date || "").split("-");
+    const formattedDate = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}` : appt.date;
     const firstProperty = getPropertyList(appt)[0] || { reference: appt.reference || "", propertyAddress: appt.propertyAddress || "" };
 
-    let cleanPhone = phone.replace(/\D/g, "");
-    if (!cleanPhone.startsWith("55")) cleanPhone = "55" + cleanPhone;
-
     let msg = "";
-    if (actionType === "update") {
-        msg = `*ATUALIZAÇÃO DE VISITA*
-Olá ${brokerName}, houve uma alteração:
-📅 Data: ${formattedDate}
-⏰ Hora: ${appt.startTime}
-📍 Endereço: ${firstProperty.propertyAddress}
-👤 Cliente: ${name}`;
-    } else if (actionType === "delete") {
-        msg = `*VISITA CANCELADA/EXCLUÍDA*
-Olá ${brokerName}, um agendamento foi apagado:
-📅 Data: ${formattedDate}
-⏰ Hora: ${appt.startTime}
-📍 Endereço: ${firstProperty.propertyAddress}
-👤 Cliente: ${name}`;
+    if (actionType === "delete") {
+        msg = `*VISITA EXCLUÍDA*\nOlá ${brokerName}, um agendamento foi excluído:\n📅 Data: ${formattedDate}\n⏰ Hora: ${appt.startTime}\n📍 Endereço: ${firstProperty.propertyAddress}\n👤 Cliente: ${name}`;
     } else {
-        msg = `Olá ${brokerName}, nova visita agendada:
-📅 Data: ${formattedDate}
-⏰ Hora: ${appt.startTime}
-📍 Endereço: ${firstProperty.propertyAddress}
-👤 Cliente: ${name}`;
+        msg = `*NOVA VISITA AGENDADA*\nOlá ${brokerName}, um novo agendamento foi criado:\n📅 Data: ${formattedDate}\n⏰ Hora: ${appt.startTime}\n📍 Endereço: ${firstProperty.propertyAddress}\n👤 Cliente: ${name}`;
     }
 
     if (firstProperty.reference) msg += `\nRef: ${firstProperty.reference}`;
@@ -87,13 +76,15 @@ export function createWhatsappButton(name, phone, appt, brokerName) {
     btn.className = "btn btn-whatsapp";
     btn.innerHTML = `<i class="fab fa-whatsapp"></i> WhatsApp`;
     btn.onclick = () => {
-        if (!phone) return alert("Telefone não cadastrado.");
-        const dateParts = appt.date.split("-");
-        const firstProperty = getPropertyList(appt)[0] || { reference: appt.reference || "", propertyAddress: appt.propertyAddress || "" };
-        const msg = `Olá ${name}, estou entrando em contato para confirmar sua visita no imóvel da rua ${firstProperty.propertyAddress} (Ref: ${firstProperty.reference || ''}) com o corretor ${brokerName} no dia ${dateParts[2]}/${dateParts[1]} às ${appt.startTime}.`;
+        const cleanPhone = normalizePhone(phone);
+        if (!cleanPhone) {
+            showDialog("Aviso", "Telefone não cadastrado.");
+            return;
+        }
 
-        let cleanPhone = phone.replace(/\D/g, "");
-        if (cleanPhone && !cleanPhone.startsWith("55") && cleanPhone.length > 9) cleanPhone = "55" + cleanPhone;
+        const dateParts = String(appt.date || "").split("-");
+        const firstProperty = getPropertyList(appt)[0] || { reference: appt.reference || "", propertyAddress: appt.propertyAddress || "" };
+        const msg = `Olá ${name}, estou entrando em contato para confirmar sua visita no imóvel da rua ${firstProperty.propertyAddress} (Ref: ${firstProperty.reference || ""}) com o corretor ${brokerName} no dia ${dateParts[2]}/${dateParts[1]} às ${appt.startTime}.`;
 
         window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, "_blank");
     };
@@ -104,15 +95,14 @@ export async function handleBrokerNotification(brokerId, brokerName, actionType,
     try {
         if (!appointmentData || appointmentData.isEvent) return;
         if (!brokerId) return;
-        if (!["create", "update", "delete"].includes(actionType)) return;
+        if (!["create", "delete"].includes(actionType)) return;
 
-        const broker = state.brokers.find((b) => b.id === brokerId || b.docId === brokerId);
-        const resolvedBrokerName = brokerName || broker?.name || "Corretor";
-        const brokerPhone = broker?.phone || getBrokerPhoneByName(resolvedBrokerName);
+        const broker = getBrokerByIdOrName(brokerId, brokerName);
+        const resolvedBrokerName = broker?.name || brokerName || "Corretor";
+        const brokerPhone = broker?.phone || "";
 
         if (!brokerPhone) {
-            const actionLabel = actionType === "delete" ? "apagado" : "salvo";
-            await showDialog("Aviso", `Agendamento ${actionLabel}, mas o corretor ${resolvedBrokerName} não possui telefone cadastrado.`);
+            await showDialog("Aviso", `O corretor ${resolvedBrokerName} não possui telefone cadastrado no perfil.`);
             return;
         }
 
@@ -120,16 +110,15 @@ export async function handleBrokerNotification(brokerId, brokerName, actionType,
         const firstClient = clients.find((c) => String(c?.name || "").trim()) || { name: "Cliente" };
 
         const promptByAction = {
-            create: `Agendamento criado com sucesso. Deseja enviar no WhatsApp para ${resolvedBrokerName}?`,
-            update: `Agendamento editado com sucesso. Deseja enviar atualização para ${resolvedBrokerName}?`,
-            delete: `Agendamento apagado com sucesso. Deseja avisar ${resolvedBrokerName} no WhatsApp?`
+            create: `Deseja enviar mensagem no WhatsApp para ${resolvedBrokerName} informando que o agendamento foi criado?`,
+            delete: `Deseja enviar mensagem no WhatsApp para ${resolvedBrokerName} informando que o agendamento foi excluído?`
         };
 
         const shouldSend = await showDialog(
-            "Notificação WhatsApp",
+            "Enviar notificação ao corretor",
             promptByAction[actionType],
             [
-                { text: "Agora não", value: false, class: "btn-cancel" },
+                { text: "Não enviar", value: false, class: "btn-cancel" },
                 { text: "Enviar", value: true, class: "btn-confirm" }
             ]
         );
