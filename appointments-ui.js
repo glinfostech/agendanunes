@@ -49,9 +49,6 @@ export function getFormDataFromUI() {
     const ownerSelect = document.getElementById("form-owner-select");
     let adminSelectedOwner = ownerSelect ? ownerSelect.value : null;
 
-    const linkedConsultantSelect = document.getElementById("form-linked-consultant");
-    const linkedConsultantEmail = linkedConsultantSelect ? linkedConsultantSelect.value : "";
-
     // Elementos de Status (Novos)
     const statusEl = document.getElementById("form-status");
     const statusObsEl = document.getElementById("form-status-obs");
@@ -82,7 +79,7 @@ export function getFormDataFromUI() {
             days: recurrenceDays
         },
         adminSelectedOwner,
-        linkedConsultantEmail
+        linkedConsultantEmail: ""
     };
 }
 
@@ -110,7 +107,6 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
     const inpEventComment = document.getElementById("form-event-comment");
     const inpStart = document.getElementById("form-start");
     const inpEnd = document.getElementById("form-end");
-    const inpLinkedConsultant = document.getElementById("form-linked-consultant");
 
     // --- ELEMENTOS DE STATUS ---
     const inpStatus = document.getElementById("form-status");
@@ -131,7 +127,6 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
     // --- PREENCHIMENTO CAMPOS ---
     populateBrokerField(inpBroker, null, null, appt, defaults);
     populateDateField(inpDate, null, null, appt, defaults);
-    populateLinkedConsultantField(inpLinkedConsultant, appt);
 
     whatsContainer.innerHTML = ""; 
     lockWarning.style.display = "none";
@@ -228,7 +223,6 @@ export function openAppointmentModal(appt, defaults = {}, onDeleteCallback) {
         inpDate.disabled = disableCore;
         inpStart.disabled = disableCore;
         inpEnd.disabled = disableCore;
-        if (inpLinkedConsultant) inpLinkedConsultant.disabled = disableCore;
         togglePropertiesDisabled(disableCore || isEvt, disableCore);
         inpEventComment.disabled = disableCore;
         chkIsEvent.disabled = disableCore;
@@ -408,27 +402,6 @@ function populateDateField(inpDate, dateStatic, btnChangeDate, appt, defaults) {
     inpDate.value = targetDate;
     
     inpDate.classList.remove("hidden");
-}
-
-function populateLinkedConsultantField(selectEl, appt) {
-    if (!selectEl) return;
-
-    const fallbackEmail = appt?.linkedConsultantEmail || appt?.createdBy || state.userProfile?.email || "";
-    const currentName = appt?.linkedConsultantName || appt?.createdByName || "";
-
-    let options = '<option value="">Selecione um consultor</option>';
-    const sortedConsultants = [...(state.availableConsultants || [])].sort((a, b) => a.name.localeCompare(b.name));
-    sortedConsultants.forEach((c) => {
-        const selected = c.email === fallbackEmail ? 'selected' : '';
-        options += `<option value="${c.email}" ${selected}>${c.name}</option>`;
-    });
-
-    if (fallbackEmail && !sortedConsultants.find((c) => c.email === fallbackEmail)) {
-        options += `<option value="${fallbackEmail}" selected>${currentName || fallbackEmail} (Inativo)</option>`;
-    }
-
-    selectEl.innerHTML = options;
-    if (fallbackEmail) selectEl.value = fallbackEmail;
 }
 
 function enforceClientRowPermissions(isLocked, isCoreEditor, isEvtMode) {
