@@ -254,6 +254,7 @@ body.theme-dark .grid-slot:hover {
    ========================================================================== */
 .btn-report { background-color: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s; }
 .btn-report:hover { background-color: var(--primary-dark); }
+.controls-section .btn-report { flex-shrink: 0; white-space: nowrap; }
 
 /* Overlay e Janela */
 .report-modal {
@@ -667,6 +668,7 @@ body.theme-dark .form-group label {
     .date-nav { width: 100%; justify-content: space-between; }
     .controls-section { gap: 8px; justify-content: flex-start; }
     #view-broker-select { width: 100% !important; }
+    .controls-section .btn-report { width: 100%; justify-content: center; }
     .view-switcher { width: 100%; min-width: 0; }
     .view-btn { flex: 1; }
     .theme-toggle-btn { width: 42px; height: 42px; }
