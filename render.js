@@ -1,5 +1,5 @@
 import { BROKERS, TIME_START, TIME_END, state } from "./config.js";
-import { isoDate, getRow, getStartOfWeek, getClientList, getPropertyList, checkTimeOverlap, showDialog } from "./utils.js";
+import { isoDate, getRow, getStartOfWeek, getClientList, getPropertyList, checkTimeOverlap } from "./utils.js";
 
 // --- PALETA DE CORES DINÂMICA (21 Cores Diferentes) ---
 const DYNAMIC_THEMES = [
@@ -283,33 +283,10 @@ function renderMonthView(grid) {
       cell.appendChild(dot);
     });
     
-    cell.onclick = async (e) => {
+    cell.onclick = (e) => {
       if (e.target !== cell && e.target.className !== "month-cell-header") return;
 
-      const isBroker = state.userProfile && (state.userProfile.role === "broker" || state.userProfile.role === "Corretor");
-      if (isBroker) {
-        if (window.showToast) window.showToast("Corretores só podem visualizar agendamentos.", "error");
-        return;
-      }
-
-      const selectedDate = new Date(y, m, d);
-      const wantsWarning = await showDialog(
-        "Criar no mês",
-        "Esse lançamento é um aviso?",
-        [
-          { text: "Não", value: false, class: "btn-cancel" },
-          { text: "Sim, é aviso", value: true, class: "btn-confirm" }
-        ]
-      );
-
-      if (wantsWarning) {
-        const dateStr = isoDate(selectedDate);
-        const brokerId = getSafeBrokerIdForCreation();
-        window.openModal(null, { brokerId, time: "08:00", date: dateStr, isEvent: true });
-        return;
-      }
-
-      state.currentDate = selectedDate;
+      state.currentDate = new Date(y, m, d);
       window.setView("day");
     };
     grid.appendChild(cell);

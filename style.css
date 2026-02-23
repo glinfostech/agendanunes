@@ -63,6 +63,9 @@ textarea.form-control { resize: vertical; min-height: 80px; font-family: inherit
    ========================================================================== */
 .navbar { background: white; border-bottom: 1px solid var(--border); padding: 0.75rem 1rem; display: grid; grid-template-columns: minmax(180px, 240px) minmax(260px, 1fr) minmax(260px, 340px) auto; align-items: center; gap: 12px; z-index: 500; box-shadow: var(--shadow); }
 .brand-section { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--primary); font-size: 1.2rem; min-width: 0; }
+.brand-text-wrap { min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+.brand-title { white-space: nowrap; line-height: 1; font-size: 1.95rem; font-weight: 800; }
+.brand-subtitle { font-size: 0.65rem; color: #818cf8; font-style: italic; font-weight: 400; line-height: 1.1; white-space: nowrap; }
 
 .controls-section { display: flex; align-items: center; gap: 10px; justify-content: flex-end; flex-wrap: nowrap; min-width: 0; }
 
@@ -660,7 +663,7 @@ body.theme-dark .form-group label {
 @media (max-width: 680px) {
     .navbar { grid-template-columns: 1fr; }
     .brand-section { font-size: 1rem; width: 100%; }
-    .brand-section > div:last-child div:first-child { font-size: 1.35rem; }
+    .brand-title { font-size: 1.55rem; }
     .date-nav { width: 100%; justify-content: space-between; }
     .controls-section { gap: 8px; justify-content: flex-start; }
     #view-broker-select { width: 100% !important; }
@@ -684,9 +687,9 @@ body.theme-dark .form-group label {
 
 @media (max-width: 420px) {
     .navbar { padding: 8px; }
-    .brand-section > i { font-size: 1.1rem !important; }
-    .brand-section > div:last-child div:first-child { font-size: 1.55rem; }
-    .brand-section > div:last-child div:last-child { font-size: 0.6rem !important; }
+    .brand-section > i { font-size: 1.1rem !important; flex-shrink: 0; }
+    .brand-title { font-size: 1.25rem; }
+    .brand-subtitle { font-size: 0.58rem !important; }
     .search-input { font-size: 0.85rem; }
     .modal { padding: 10px; }
     .btn { padding: 8px 10px; }
