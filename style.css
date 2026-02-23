@@ -87,7 +87,7 @@ textarea.form-control { resize: vertical; min-height: 80px; font-family: inherit
 /* ==========================================================================
    5. BUSCA (SEARCH)
    ========================================================================== */
-.search-container { position: relative; width: 100%; min-width: 0; }
+.search-container { position: relative; width: 100%; min-width: 0; max-width: 760px; justify-self: start; }
 .search-input { width: 100%; padding: 8px 10px 8px 35px; border-radius: 20px; border: 1px solid var(--border); font-size: 0.9rem; background: #f1f5f9; transition: all 0.2s; }
 .search-input:focus { background: white; border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1); }
 .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.9rem; pointer-events: none; }
@@ -641,7 +641,7 @@ body.theme-dark .form-group label {
 @media (max-width: 1800px) {
     .navbar { grid-template-columns: minmax(210px, 280px) minmax(260px, 1fr); align-items: stretch; }
     .brand-section { grid-column: 1; }
-    .search-container { grid-column: 2; }
+    .search-container { grid-column: 2; max-width: 620px; }
     .date-nav { grid-column: 1; }
     .controls-section { grid-column: 2; justify-content: flex-start; gap: 8px; flex-wrap: wrap; }
     .user-menu { margin-left: auto; }
@@ -652,7 +652,7 @@ body.theme-dark .form-group label {
     body { overflow: auto; }
     .navbar { padding: 10px; gap: 10px; grid-template-columns: 1fr 1fr; align-items: stretch; }
     .brand-section { grid-column: 1 / -1; width: 100%; min-width: 0; }
-    .search-container { grid-column: 1 / -1; width: 100%; min-width: 0; }
+    .search-container { grid-column: 1 / -1; width: 100%; min-width: 0; max-width: 100%; }
     .date-nav { width: 100%; justify-content: space-between; min-width: 0; }
     .controls-section { width: 100%; justify-content: flex-end; flex-wrap: wrap; gap: 8px; min-width: 0; }
     #current-date-label { font-size: 0.85rem; }
