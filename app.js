@@ -15,13 +15,14 @@ import { initReports } from "./reports.js";
 // 2. INICIALIZAÇÃO E AUTENTICAÇÃO
 initAuth(initApp);
 
-function isBrokerRole(role) {
-    return role === "broker" || role === "Corretor";
-}
-
 function normalizeRole(role) {
     if (!role) return "";
     return String(role).trim().toLowerCase();
+}
+
+function isBrokerRole(role) {
+    const normalizedRole = normalizeRole(role);
+    return normalizedRole === "broker" || normalizedRole === "corretor";
 }
 
 function isBrokerUserRole(role) {

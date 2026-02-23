@@ -285,34 +285,41 @@ function updateUserUI(profile) {
 
 // --- CORREÇÃO AQUI: FILTRAR USUÁRIOS OCULTOS ---
 async function loadConsultantsList() {
-    try {
-        const validRoles = new Set(["consultant", "consultora", "admin"]);
-        const consultantsMap = new Map();
+    const validRoles = new Set(["consultant", "consultora", "admin"]);
+    const consultantsMap = new Map();
 
-        for (const collectionName of AUTH_COLLECTIONS) {
-            try {
-                const snapshot = await getDocs(collection(db, collectionName));
-                snapshot.docs.forEach((userDoc) => {
-                    const data = userDoc.data() || {};
-                    const role = normalizeRole(data.role);
-                    if (!validRoles.has(role)) return;
+    const collectFromSnapshot = (snapshot) => {
+        snapshot.docs.forEach((userDoc) => {
+            const data = userDoc.data() || {};
+            const role = normalizeRole(data.role);
+            if (!validRoles.has(role)) return;
 
-                    const email = normalizeEmail(data.email || userDoc.id);
-                    if (!email || HIDDEN_USERS.includes(email)) return;
+            const email = normalizeEmail(data.email || userDoc.id);
+            if (!email || HIDDEN_USERS.includes(email)) return;
 
-                    if (!consultantsMap.has(email)) {
-                        consultantsMap.set(email, {
-                            email,
-                            name: data.name || email
-                        });
-                    }
+            if (!consultantsMap.has(email)) {
+                consultantsMap.set(email, {
+                    email,
+                    name: data.name || email
                 });
-            } catch (_) {}
-        }
+            }
+        });
+    };
 
-        state.availableConsultants = Array.from(consultantsMap.values())
-          .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
-    } catch (e) {
-        state.availableConsultants = [];
+    try {
+        const usersScoped = query(collection(db, "users"), where("role", "in", ["consultant", "admin"]));
+        const scopedSnapshot = await getDocs(usersScoped);
+        collectFromSnapshot(scopedSnapshot);
+    } catch (_) {}
+
+    for (const collectionName of AUTH_COLLECTIONS) {
+        try {
+            const snapshot = await getDocs(collection(db, collectionName));
+            collectFromSnapshot(snapshot);
+        } catch (_) {}
     }
+
+    state.availableConsultants = Array.from(consultantsMap.values())
+        .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
 }
+
